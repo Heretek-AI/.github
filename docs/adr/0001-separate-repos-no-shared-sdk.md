@@ -11,7 +11,7 @@ The five agent-tooling repositories (IUMBTEMS, claude-4-opencode, scraper-swarm,
 - Conventions are shared as files here: default health files, a label set, an `AGENTS.md` template and one reusable workflow. Each repository keeps its own CI.
 - Repositories integrate over a versioned protocol, as IUMBTEMS and scraper-swarm do, and never import each other's source.
 - A helper needed by two repositories is copied until a trigger below is met. Two small copies cost less than a package with its own release cadence.
-- New work that needs a different toolchain from its host starts as a new repository. An OpenCode integration for GDevelop would be the first such case.
+- New work that needs a different toolchain from its host starts as a new repository. Work that fits the host's toolchain stays in it.
 
 **Revisit when**
 - a module gains a second real consumer in another repository, and both are ready to depend on a published package;

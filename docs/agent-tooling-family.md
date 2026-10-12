@@ -33,5 +33,5 @@ Each repository's `AGENTS.md` is the authority on its own rules.
 
 Two artifacts have, or are close to having, a second consumer. Each stays in its home repository and is published from there when the consumer is ready.
 
-- IUMBTEMS `packages/testkit`: a mock OpenCode host and stub model, useful to any OpenCode v2 plugin.
-- The scraper-swarm contract: fixtures plus a typed `/mcp` client, in place of vendored copies.
+- IUMBTEMS `packages/testkit`: a mock OpenCode host and stub model, useful to any OpenCode v2 plugin. Tracked in Heretek-AI/IUMBTEMS#350.
+- The scraper-swarm contract: fixtures plus a typed `/mcp` client, in place of vendored copies. Tracked in Heretek-AI/scraper-swarm#19.
