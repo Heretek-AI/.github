@@ -29,13 +29,13 @@ Fails when a tracked file contains a `file://` URI or an absolute path into a ho
 ```yaml
 jobs:
   hygiene:
-    uses: Heretek-AI/.github/.github/workflows/hygiene.yml@main
+    uses: Heretek-AI/.github/.github/workflows/hygiene.yml@<commit sha> # main
     with:
       exclude: |
         path/to/recorded-evidence
 ```
 
-`exclude` is optional: one repo-relative path per line, for files that must stay byte-identical, such as recorded evidence.
+Pin the workflow to a commit of this repository; code scanning flags a branch reference. `exclude` is optional: one repo-relative path per line, for files that must stay byte-identical, such as recorded evidence.
 
 ### Labels
 
