@@ -1,0 +1,56 @@
+name: Hygiene
+
+# Reusable check: tracked files must not contain machine-local paths.
+# A file:// URI or an absolute path into someone's home directory describes
+# one machine, breaks for every other reader and leaks the directory layout.
+#
+# Call it from a repository:
+#
+#   jobs:
+#     hygiene:
+#       uses: Heretek-AI/.github/.github/workflows/hygiene.yml@main
+#       with:
+#         exclude: |
+#           path/to/recorded-evidence
+
+on:
+  workflow_call:
+    inputs:
+      exclude:
+        description: Newline-separated paths left out of the scan, relative to the repo root.
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  local-paths:
+    name: No machine-local paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Scan tracked files
+        env:
+          EXCLUDE: ${{ inputs.exclude }}
+          # 1. file:// URIs into a home directory.
+          # 2. Absolute home paths that continue into a personal or agent-state folder.
+          PATTERN: >-
+            file:///(home|Users|root)/|/(home|Users)/[^/[:space:]"'`<>]+/(Projects|Documents|Desktop|Downloads|\.gemini|\.claude|\.codex|\.cursor)(/|[^A-Za-z0-9_-]|$)
+        run: |
+          set -euo pipefail
+          specs=(.)
+          while IFS= read -r path; do
+            path="${path#"${path%%[![:space:]]*}"}"
+            path="${path%"${path##*[![:space:]]}"}"
+            [ -n "$path" ] && specs+=(":(exclude)$path")
+          done <<<"$EXCLUDE"
+
+          if git grep -nIE "$PATTERN" -- "${specs[@]}"; then
+            echo "::error::Machine-local paths found in tracked files. Use repo-relative paths, or owner/name for another repository."
+            exit 1
+          fi
+          echo "No machine-local paths in tracked files."

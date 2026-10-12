@@ -1,0 +1,29 @@
+name: Bug
+description: Something behaves differently from what the docs or tests say.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened
+      description: The observed behavior, with exact error text or command output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that shows it.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v1.2.3 or a commit SHA

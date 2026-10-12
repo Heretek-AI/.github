@@ -1,0 +1,27 @@
+name: Task
+description: A unit of work with a checkable finish line.
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What changes, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Conditions someone else can check, one per line.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Out of scope
+  - type: textarea
+    id: links
+    attributes:
+      label: Related issues and evidence

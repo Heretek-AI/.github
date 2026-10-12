@@ -1,0 +1,30 @@
+name: Epic
+description: A tracking issue that groups child issues toward one outcome.
+labels: ["epic"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What is true when this epic closes.
+    validations:
+      required: true
+  - type: textarea
+    id: children
+    attributes:
+      label: Child issues
+      description: In the order they should land. Note what blocks what.
+      value: |
+        - [ ] #
+    validations:
+      required: true
+  - type: textarea
+    id: exit
+    attributes:
+      label: Exit criteria
+      description: Checkable conditions beyond "all children closed".
+  - type: textarea
+    id: human
+    attributes:
+      label: Human-only steps
+      description: Decisions, credentials, merges or releases that only a maintainer performs.
