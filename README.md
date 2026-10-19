@@ -17,6 +17,7 @@ A repository opts out of one by committing its own file at the same path. Any fi
 | Path | Purpose |
 | --- | --- |
 | [`docs/agent-tooling-family.md`](docs/agent-tooling-family.md) | The five repositories and what connects them |
+| [`docs/organization-governance.md`](docs/organization-governance.md) | Organization hardening, rulesets, secrets/variables, and repository inventory |
 | [`docs/adr/`](docs/adr/) | Decisions that span repositories |
 | [`templates/AGENTS.md`](templates/AGENTS.md) | Starting point for a new repository's agent guide |
 | `labels.json`, `scripts/sync-labels.sh` | Shared label set |
@@ -40,13 +41,18 @@ Pin the workflow to a commit of this repository; code scanning flags a branch re
 
 ### OpenCodeReview (`ocr-review.yml`)
 
-Runs [`Heretek-AI/open-code-review`](https://github.com/Heretek-AI/open-code-review) on pull requests (`pull_request_target`) and `/open-code-review` maintainer comments (`issue_comment`) using organization-level variables (`OCR_LLM_URL`, `OCR_LLM_MODEL`, `OCR_LLM_USE_ANTHROPIC`) and the `OCR_LLM_TOKEN` organization secret.
+Runs [`Heretek-AI/open-code-review`](https://github.com/Heretek-AI/open-code-review) on pull requests (`pull_request`) and `@ocr` maintainer comments (`issue_comment`) across all 29 active workflow-enabled repositories using organization-level variables (`OCR_LLM_URL`, `OCR_LLM_MODEL`, `OCR_LLM_USE_ANTHROPIC`) and the `OCR_LLM_TOKEN` organization secret:
 
 ```yaml
 jobs:
-  review:
-    uses: Heretek-AI/.github/.github/workflows/ocr-review.yml@<commit sha> # main
-    secrets: inherit
+  ocr:
+    uses: Heretek-AI/.github/.github/workflows/ocr-review.yml@main
+    with:
+      llm_url: ${{ vars.OCR_LLM_URL || 'https://token-plan-sgp.xiaomimimo.com/v1' }}
+      llm_model: ${{ vars.OCR_LLM_MODEL || 'mimo-v2.6-flash' }}
+      use_anthropic: ${{ vars.OCR_LLM_USE_ANTHROPIC == 'true' }}
+    secrets:
+      OCR_LLM_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}
 ```
 
 ### Standardized Organization Secrets & Variables
@@ -54,11 +60,11 @@ jobs:
 | Name | Kind | Visibility | Purpose |
 | --- | --- | --- | --- |
 | `OPENCODE_MODEL` | Org Variable | `all` | Default model for OpenCode live evals and AI review (`opencode/muse-spark-1.3-contributor`) |
-| `OPENCODE_API_KEY` | Org Secret | `selected` | OpenCode API key for live evals and AI review |
+| `OPENCODE_API_KEY` | Org Secret | `selected` | OpenCode API key for live evals and AI review (`IUMBTEMS`, `claude-4-opencode`, `awesome-opencode`, `Agent-Builder`) |
 | `OCR_LLM_URL` | Org Variable | `all` | OpenCodeReview LLM endpoint (`https://token-plan-sgp.xiaomimimo.com/v1`) |
 | `OCR_LLM_MODEL` | Org Variable | `all` | OpenCodeReview model (`mimo-v2.6-flash`) |
 | `OCR_LLM_USE_ANTHROPIC` | Org Variable | `all` | OpenCodeReview protocol toggle (`false` for OpenAI-compatible) |
-| `OCR_LLM_TOKEN` | Org Secret | `selected` | OpenCodeReview API token |
+| `OCR_LLM_TOKEN` | Org Secret | `all` | OpenCodeReview API token |
 
 ### Labels
 
