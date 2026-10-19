@@ -1,0 +1,98 @@
+name: OpenCodeReview
+
+# Reusable PR code review workflow powered by Heretek-AI/open-code-review.
+#
+# Call from a repository's .github/workflows/ocr.yml:
+#
+#   jobs:
+#     review:
+#       uses: Heretek-AI/.github/.github/workflows/ocr-review.yml@<commit sha> # main
+#       secrets: inherit
+
+on:
+  workflow_call:
+    inputs:
+      effort:
+        description: "Review effort preset (low, medium, high)"
+        type: string
+        required: false
+        default: ""
+      route_severity_below:
+        description: "Route findings at-or-below this severity to summary (low, medium, high)"
+        type: string
+        required: false
+        default: "low"
+    secrets:
+      OCR_LLM_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  code-review:
+    name: OpenCodeReview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: |
+      github.event_name == 'pull_request_target'
+      || (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && github.event.comment.user.type != 'Bot'
+        && (
+          github.event.comment.author_association == 'MEMBER'
+          || github.event.comment.author_association == 'OWNER'
+          || github.event.comment.author_association == 'COLLABORATOR'
+        )
+        && (
+          startsWith(github.event.comment.body, '/open-code-review')
+          || startsWith(github.event.comment.body, '@open-code-review')
+        )
+      )
+    steps:
+      - name: Check for OCR_LLM_TOKEN
+        id: check-secret
+        env:
+          OCR_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}
+        run: |
+          if [ -z "$OCR_TOKEN" ]; then
+            echo "::notice::OCR_LLM_TOKEN secret is not set; skipping OpenCodeReview."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get PR context
+        id: pr-context
+        if: steps.check-secret.outputs.present == 'true' && github.event_name == 'issue_comment'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            core.setOutput('base_ref', pullRequest.base.ref);
+            core.setOutput('head_sha', pullRequest.head.sha);
+            core.setOutput('title', pullRequest.title);
+
+      - name: Run OpenCodeReview
+        if: steps.check-secret.outputs.present == 'true'
+        uses: Heretek-AI/open-code-review@8eb83340a487b1150af00701b94f01af97e4b4d6 # main
+        with:
+          llm_url: ${{ vars.OCR_LLM_URL || 'https://token-plan-sgp.xiaomimimo.com/v1' }}
+          llm_auth_token: ${{ secrets.OCR_LLM_TOKEN }}
+          llm_model: ${{ vars.OCR_LLM_MODEL || 'mimo-v2.6-flash' }}
+          llm_use_anthropic: ${{ vars.OCR_LLM_USE_ANTHROPIC || 'false' }}
+          sticky_summary: 'true'
+          incremental: 'true'
+          checkpoint_range: 'true'
+          effort: ${{ inputs.effort }}
+          route_severity_below: ${{ inputs.route_severity_below }}
+          background: ${{ steps.pr-context.outputs.title || github.event.pull_request.title }}
+          base_ref: ${{ steps.pr-context.outputs.base_ref }}
+          head_sha: ${{ steps.pr-context.outputs.head_sha }}

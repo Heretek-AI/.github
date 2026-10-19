@@ -21,6 +21,7 @@ A repository opts out of one by committing its own file at the same path. Any fi
 | [`templates/AGENTS.md`](templates/AGENTS.md) | Starting point for a new repository's agent guide |
 | `labels.json`, `scripts/sync-labels.sh` | Shared label set |
 | `.github/workflows/hygiene.yml` | Reusable check for machine-local paths |
+| `.github/workflows/ocr-review.yml` | Reusable OpenCodeReview PR review workflow |
 
 ### Hygiene check
 
@@ -36,6 +37,28 @@ jobs:
 ```
 
 Pin the workflow to a commit of this repository; code scanning flags a branch reference. `exclude` is optional: one repo-relative path per line, for files that must stay byte-identical, such as recorded evidence.
+
+### OpenCodeReview (`ocr-review.yml`)
+
+Runs [`Heretek-AI/open-code-review`](https://github.com/Heretek-AI/open-code-review) on pull requests (`pull_request_target`) and `/open-code-review` maintainer comments (`issue_comment`) using organization-level variables (`OCR_LLM_URL`, `OCR_LLM_MODEL`, `OCR_LLM_USE_ANTHROPIC`) and the `OCR_LLM_TOKEN` organization secret.
+
+```yaml
+jobs:
+  review:
+    uses: Heretek-AI/.github/.github/workflows/ocr-review.yml@<commit sha> # main
+    secrets: inherit
+```
+
+### Standardized Organization Secrets & Variables
+
+| Name | Kind | Visibility | Purpose |
+| --- | --- | --- | --- |
+| `OPENCODE_MODEL` | Org Variable | `all` | Default model for OpenCode live evals and AI review (`opencode/muse-spark-1.3-contributor`) |
+| `OPENCODE_API_KEY` | Org Secret | `selected` | OpenCode API key for live evals and AI review |
+| `OCR_LLM_URL` | Org Variable | `all` | OpenCodeReview LLM endpoint (`https://token-plan-sgp.xiaomimimo.com/v1`) |
+| `OCR_LLM_MODEL` | Org Variable | `all` | OpenCodeReview model (`mimo-v2.6-flash`) |
+| `OCR_LLM_USE_ANTHROPIC` | Org Variable | `all` | OpenCodeReview protocol toggle (`false` for OpenAI-compatible) |
+| `OCR_LLM_TOKEN` | Org Secret | `selected` | OpenCodeReview API token |
 
 ### Labels
 
