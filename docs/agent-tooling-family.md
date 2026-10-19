@@ -28,6 +28,8 @@ Each repository's `AGENTS.md` is the authority on its own rules.
 | `labels.json`, `scripts/sync-labels.sh` | Label set common to the family |
 | `templates/AGENTS.md` | Starting point for a new repository's agent guide |
 | `.github/workflows/hygiene.yml` | Reusable check that keeps machine-local paths out of tracked files |
+| `.github/workflows/ocr-review.yml` | Reusable OpenCodeReview PR review workflow (`Heretek-AI/open-code-review`) |
+| `docs/organization-governance.md` | Organization security hardening, zero-bypass rulesets, and CI secret/variable governance |
 
 ## Candidates for sharing
 
