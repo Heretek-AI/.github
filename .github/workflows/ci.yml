@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   hygiene:
-    uses: ./.github/workflows/hygiene.yml
+    uses: $/.github/workflows/hygiene.yml
+    with:
+      audit_workflows: true
 
   lint:
     name: Labels and scripts
@@ -19,8 +21,17 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: labels.json is a list of name, color, description
+
+      - name: Validate labels.json schema
         run: |
           jq -e 'type == "array" and all(.[]; (.name | type == "string") and (.color | test("^[0-9a-f]{6}$")) and (.description | type == "string"))' labels.json
-      - name: shellcheck
+
+      - name: Validate fleet-manifest.json schema
+        run: |
+          jq -e '.schema_version == 1 and (.profiles | type == "object") and (.repositories | type == "array") and all(.repositories[]; (.name | type == "string") and (.profile | type == "string"))' fleet-manifest.json
+
+      - name: Validate Agent Skills (SKILL.md)
+        run: bash scripts/validate-skills.sh
+
+      - name: ShellCheck scripts
         run: shellcheck scripts/*.sh

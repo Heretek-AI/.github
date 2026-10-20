@@ -1,0 +1,48 @@
+name: Audit Finding
+description: Independent verification gap or adversarial audit finding backed by runnable proof.
+title: "[Audit]: "
+type: Bug
+labels: ["audit"]
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Severity classification per Heretek-AI adversarial audit standards.
+      options:
+        - "P0 — Broken against real host/upstream, security boundary bypass, or missing pinned artifact"
+        - "P1 — Deprecated/EOL version, fail-open error handling, untested [S] invariant, or upstream drift"
+        - "P2 — Non-fatal version lag, doc/behavior mismatch, or missing CI coverage"
+        - "P3 — Minor cleanup, dead code, or naming consistency"
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: File and line location
+      description: Repo-relative path and line range (`path/to/file.ts:123`).
+      placeholder: src/index.ts:42
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Claim under audit
+      description: What the README, AGENTS.md, spec, or test suite claims works.
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: Runnable proof command and verbatim output
+      description: Exact command runnable from the repository root and its trimmed raw output.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Fail-closed remediation and verification check
+      description: Exact diff or fix strategy and the command that turns from red to green.
+    validations:
+      required: true

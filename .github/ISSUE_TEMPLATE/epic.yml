@@ -1,5 +1,7 @@
 name: Epic
 description: A tracking issue that groups child issues toward one outcome.
+title: "[Epic]: "
+type: Epic
 labels: ["epic"]
 body:
   - type: textarea
@@ -23,6 +25,8 @@ body:
     attributes:
       label: Exit criteria
       description: Checkable conditions beyond "all children closed".
+    validations:
+      required: true
   - type: textarea
     id: human
     attributes:

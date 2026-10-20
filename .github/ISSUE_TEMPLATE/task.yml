@@ -1,5 +1,8 @@
 name: Task
 description: A unit of work with a checkable finish line.
+title: "[Task]: "
+type: Task
+labels: ["task"]
 body:
   - type: textarea
     id: goal
@@ -12,15 +15,22 @@ body:
     id: done
     attributes:
       label: Done when
-      description: Conditions someone else can check, one per line.
+      description: Binary, runnable conditions someone else (or an agent) can verify, one per line.
       value: |
         - [ ]
     validations:
       required: true
   - type: textarea
+    id: verify
+    attributes:
+      label: Verification commands
+      description: Exact commands that must exit 0 to prove completion.
+      render: shell
+  - type: textarea
     id: scope
     attributes:
       label: Out of scope
+      description: Explicit refusal boundaries so implementation does not drift.
   - type: textarea
     id: links
     attributes:

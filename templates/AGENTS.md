@@ -12,6 +12,15 @@ Delete these comments, and any section with nothing to say.
 Back every claim about behavior with something executed or read: test output,
 command output, a file and line. State what was not run.
 
+## Agent Skills & Local Hooks
+
+- Shared organization skills live in `.agents/skills/` (symlinked to `.opencode/skills/`, `.claude/skills/`, and `.github/skills/`):
+  - `evidence-pr`: pre-PR verification and evidence formatting
+  - `hygiene-and-workflow-audit`: machine-local path scan, `actionlint`, `zizmor`, and `SKILL.md` validation
+  - `cross-repo-contract-check`: protocol and fixture verification across repositories
+  - `adversarial-claim-check`: disposable worktree verification and invariant sabotage testing
+- Run `lefthook install` after cloning and `lefthook run pre-commit` before committing.
+
 ## Canonical surfaces
 
 <!--
@@ -32,10 +41,11 @@ one that spends money, the one that needs a secret.
 
 | Invariant | Where |
 | --- | --- |
+| No machine-local paths in tracked files | `lefthook.yml` (`no-local-paths`), `.github/workflows/hygiene.yml` |
 
 ## Workflow
 
 - Work on a topic branch and open a pull request. A maintainer merges and cuts releases.
-- Stage explicit paths.
-- After a push, check every workflow run.
+- Stage explicit paths and commit with `--signoff` (`git commit -s`).
+- After a push, check every workflow run (`gh pr checks --watch`).
 - Write repo-relative paths in tracked files, and `owner/name` for another repository.
