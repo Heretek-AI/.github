@@ -1,0 +1,68 @@
+# Lefthook v2 configuration for Heretek-AI/.github
+# Spec: https://lefthook.dev/configuration/jobs/ (Lefthook >= 2.2.2)
+min_version: 1.10.0
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: no-local-paths
+      run: |
+        PATTERN='file:///(home|Users|root)/|/(home|Users)/[^/[:space:]"'"'"'`<>]+/(Projects|Documents|Desktop|Downloads|\.gemini|\.claude|\.codex|\.cursor)(/|[^A-Za-z0-9_-]|$)'
+        if git grep -nIE "$PATTERN" -- {staged_files}; then
+          echo "ERROR: Machine-local paths found in staged files. Use repo-relative paths or owner/name."
+          exit 1
+        fi
+
+    - name: gitleaks
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --redact --no-banner
+        fi
+
+    - name: json-schema
+      glob: "*.json"
+      run: |
+        jq empty {staged_files}
+        if [ -f labels.json ]; then
+          jq -e 'type == "array" and all(.[]; (.name | type == "string") and (.color | test("^[0-9a-f]{6}$")) and (.description | type == "string"))' labels.json >/dev/null
+        fi
+        if [ -f fleet-manifest.json ]; then
+          jq -e '.schema_version == 1 and (.profiles | type == "object") and (.repositories | type == "array")' fleet-manifest.json >/dev/null
+        fi
+
+    - name: shell-format
+      glob: "*.sh"
+      stage_fixed: true
+      run: |
+        if command -v shfmt >/dev/null 2>&1; then
+          shfmt -i 2 -ci -w {staged_files}
+        fi
+
+    - name: shellcheck
+      glob: "*.sh"
+      run: |
+        if command -v shellcheck >/dev/null 2>&1; then
+          shellcheck {staged_files}
+        else
+          bash -n {staged_files}
+        fi
+
+    - name: skills-validate
+      glob: "{skills,.agents/skills}/*/SKILL.md"
+      run: bash scripts/validate-skills.sh
+
+    - name: workflow-actionlint
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: |
+        if command -v actionlint >/dev/null 2>&1; then
+          actionlint {staged_files}
+        fi
+
+    - name: workflow-zizmor
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: |
+        if command -v zizmor >/dev/null 2>&1; then
+          zizmor --format=plain {staged_files}
+        elif command -v uvx >/dev/null 2>&1; then
+          uvx zizmor@1.30.1 --format=plain {staged_files}
+        fi

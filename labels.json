@@ -1,10 +1,57 @@
 [
-  { "name": "epic", "color": "5319e7", "description": "Tracking issue: goals, order, exit criteria" },
-  { "name": "security", "color": "b60205", "description": "Security or isolation gap" },
-  { "name": "human-only", "color": "b60205", "description": "Only a human can do this step" },
-  { "name": "audit", "color": "ededed", "description": "Independent verification of shipped work" },
-  { "name": "release", "color": "0e8a16", "description": "Release, tagging or publishing" },
-  { "name": "cross-repo", "color": "c5def5", "description": "Depends on or affects another Heretek-AI repo" },
-  { "name": "upstream", "color": "fbca04", "description": "Driven by a change in an upstream project" },
-  { "name": "dependencies", "color": "0366d6", "description": "Pull requests that update a dependency file" }
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something behaves differently from what the docs or tests say"
+  },
+  {
+    "name": "task",
+    "color": "0075ca",
+    "description": "A unit of work with a checkable finish line"
+  },
+  {
+    "name": "epic",
+    "color": "5319e7",
+    "description": "Tracking issue: goals, order, exit criteria"
+  },
+  {
+    "name": "security",
+    "color": "b60205",
+    "description": "Security or isolation gap"
+  },
+  {
+    "name": "human-only",
+    "color": "b60205",
+    "description": "Only a human can do this step"
+  },
+  {
+    "name": "audit",
+    "color": "ededed",
+    "description": "Independent verification of shipped work"
+  },
+  {
+    "name": "release",
+    "color": "0e8a16",
+    "description": "Release, tagging or publishing"
+  },
+  {
+    "name": "cross-repo",
+    "color": "c5def5",
+    "description": "Depends on or affects another Heretek-AI repo"
+  },
+  {
+    "name": "upstream",
+    "color": "fbca04",
+    "description": "Driven by a change in an upstream project"
+  },
+  {
+    "name": "dependencies",
+    "color": "0366d6",
+    "description": "Pull requests that update a dependency file"
+  },
+  {
+    "name": "org-sync",
+    "color": "1d76db",
+    "description": "Automated standardization PR from Heretek-AI/.github"
+  }
 ]

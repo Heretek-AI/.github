@@ -1,0 +1,70 @@
+name: Fleet Standardization Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "fleet-manifest.json"
+      - "labels.json"
+      - "lefthook.yml"
+      - "templates/**"
+      - "skills/**"
+      - "scripts/**"
+      - ".github/actionlint.yaml"
+      - ".github/workflows/hygiene.yml"
+      - ".github/workflows/ocr-review.yml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview changes without pushing branches or opening PRs"
+        type: boolean
+        default: true
+      target_repo:
+        description: "Optional single repository name (e.g. IUMBTEMS) to sync; leave blank for all"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fleet-sync-main
+  cancel-in-progress: false
+
+jobs:
+  sync-fleet:
+    name: Open standardization PRs across Heretek-AI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Check for ORG_SYNC_TOKEN
+        id: check-token
+        env:
+          SYNC_TOKEN: ${{ secrets.ORG_SYNC_TOKEN }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "::notice::ORG_SYNC_TOKEN organization secret is not set; running fleet-sync in dry-run mode."
+            echo "dry_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=${{ inputs.dry_run || 'false' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Propagate standards across fleet
+        env:
+          GH_TOKEN: ${{ secrets.ORG_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ steps.check-token.outputs.dry_run }}
+          TARGET_REPO: ${{ inputs.target_repo }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          if [ -n "$TARGET_REPO" ]; then
+            args+=(--repo "$TARGET_REPO")
+          fi
+          bash scripts/sync-fleet.sh "${args[@]}"

@@ -1,8 +1,7 @@
 name: Hygiene
 
-# Reusable check: tracked files must not contain machine-local paths.
-# A file:// URI or an absolute path into someone's home directory describes
-# one machine, breaks for every other reader and leaks the directory layout.
+# Reusable check: tracked files must not contain machine-local paths, and
+# workflows must pass static syntax/security checks when enabled.
 #
 # Call it from a repository:
 #
@@ -20,6 +19,10 @@ on:
         description: Newline-separated paths left out of the scan, relative to the repo root.
         type: string
         default: ""
+      audit_workflows:
+        description: Run actionlint and zizmor against .github/workflows/ in a companion job.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -54,3 +57,20 @@ jobs:
             exit 1
           fi
           echo "No machine-local paths in tracked files."
+
+  workflow-security:
+    name: Workflow syntax and security
+    if: inputs.audit_workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Audit workflows with zizmor
+        run: uvx "zizmor@1.30.1" --format=github .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,11 @@
+# Ruff v0.17+ configuration for Heretek-AI Python repositories
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

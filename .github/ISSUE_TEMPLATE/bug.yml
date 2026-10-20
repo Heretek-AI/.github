@@ -1,5 +1,7 @@
 name: Bug
 description: Something behaves differently from what the docs or tests say.
+title: "[Bug]: "
+type: Bug
 labels: ["bug"]
 body:
   - type: textarea
@@ -7,23 +9,35 @@ body:
     attributes:
       label: What happened
       description: The observed behavior, with exact error text or command output.
+      render: shell
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
       label: What you expected
+      description: The behavior promised by the docs, contract, or test suite.
     validations:
       required: true
   - type: textarea
     id: repro
     attributes:
       label: Steps to reproduce
-      description: The smallest sequence that shows it.
+      description: The smallest runnable command sequence that demonstrates the failure from a clean checkout.
+      render: shell
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Version or commit
-      placeholder: v1.2.3 or a commit SHA
+      description: Exact git commit SHA (`git rev-parse HEAD`) or package version.
+      placeholder: v1.2.3 or 8eb83340a487b1150af00701b94f01af97e4b4d6
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Runtime and OS
+      description: Runtime version (Bun, Node, Python/uv, OpenCode) and OS/arch.
+      placeholder: "Bun 1.3.x / OpenCode 2.0.26 on Linux x86_64"

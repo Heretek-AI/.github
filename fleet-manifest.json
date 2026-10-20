@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "organization": "Heretek-AI",
+  "sync_branch": "chore/sync-org-standards",
+  "profiles": {
+    "bun-biome": {
+      "description": "Bun workspaces/projects with Biome v2.5 and TypeScript",
+      "lefthook_template": "templates/lefthook/bun-biome.yml",
+      "sync_skills": true,
+      "sync_actionlint_config": true
+    },
+    "python-uv": {
+      "description": "Python 3.12+ with uv, Ruff v0.17, ty, and pnpm/Docker",
+      "lefthook_template": "templates/lefthook/python-uv.yml",
+      "sync_skills": true,
+      "sync_actionlint_config": true
+    },
+    "node-zerodep": {
+      "description": "Zero-dependency Node.js repositories using built-in node:test",
+      "lefthook_template": "templates/lefthook/node-zerodep.yml",
+      "sync_skills": true,
+      "sync_actionlint_config": true
+    },
+    "universal": {
+      "description": "Universal hygiene, shellcheck, JSON, and workflow security hooks",
+      "lefthook_template": "templates/lefthook/universal.yml",
+      "sync_skills": true,
+      "sync_actionlint_config": true
+    }
+  },
+  "repositories": [
+    {
+      "name": "IUMBTEMS",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": true
+    },
+    {
+      "name": "claude-4-opencode",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": true
+    },
+    {
+      "name": "scraper-swarm",
+      "profile": "python-uv",
+      "actions_enabled": true,
+      "protected_ruleset": true
+    },
+    {
+      "name": "opencode-4-openclaude",
+      "profile": "node-zerodep",
+      "actions_enabled": true,
+      "protected_ruleset": true
+    },
+    {
+      "name": "GDevelop-Unlocked",
+      "profile": "node-zerodep",
+      "actions_enabled": true,
+      "protected_ruleset": true
+    },
+    {
+      "name": "awesome-opencode",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": true
+    },
+    {
+      "name": "Agent-Builder",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "awesome-harness",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "Token-Max",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "heretek-rigs",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "Heretek-Crew",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "heretek-context-router",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "epistemic-factory",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "agency-control-plane",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "The-Agency",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "SwarmOS",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "heretek-devcontainers",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "oh-mine-pi",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "arcane-repo",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "Game-Studio",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "opencode-harness",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "opencode-v2-plugin-teser",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "opencode-rea",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "opencode-searxng-plugin",
+      "profile": "bun-biome",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "godot-opencode",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "unity.gamedev.kit",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "homebrew-tap",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "ompweb-docker",
+      "profile": "universal",
+      "actions_enabled": true,
+      "protected_ruleset": false
+    },
+    {
+      "name": "heretek-skills",
+      "profile": "universal",
+      "actions_enabled": false,
+      "protected_ruleset": false
+    },
+    {
+      "name": "virt-box",
+      "profile": "universal",
+      "actions_enabled": false,
+      "protected_ruleset": false
+    },
+    {
+      "name": "optimized-prompts",
+      "profile": "universal",
+      "actions_enabled": false,
+      "protected_ruleset": false
+    },
+    {
+      "name": "free-git",
+      "profile": "universal",
+      "actions_enabled": false,
+      "protected_ruleset": false
+    }
+  ]
+}
