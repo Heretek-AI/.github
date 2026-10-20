@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   hygiene:
-    uses: ./.github/workflows/hygiene.yml
+    uses: $/.github/workflows/hygiene.yml
     with:
       audit_workflows: true
 

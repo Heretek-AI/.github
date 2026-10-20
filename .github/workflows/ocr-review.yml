@@ -7,7 +7,8 @@ name: OpenCodeReview
 #   jobs:
 #     review:
 #       uses: Heretek-AI/.github/.github/workflows/ocr-review.yml@<commit sha> # main
-#       secrets: inherit
+#       secrets:
+#         OCR_LLM_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}
 
 on:
   workflow_call:
@@ -36,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: |
-      github.event_name == 'pull_request_target'
+      github.event_name == 'pull_request'
       || (
         github.event_name == 'issue_comment'
         && github.event.issue.pull_request
