@@ -1,0 +1,26 @@
+# Red-proof log — fleet-ci-fix QA (branch feat/fleet-sync-standardization @ 93d957a, NOT pushed)
+
+Purpose: prove the $/ vs ./ check is non-vacuous (fails RED when sabotaged, GREEN when clean).
+Date (UTC): 2026-10-21. Verifier: agency-qa. No commits, no push.
+
+## Sabotage applied (temporary, production file)
+- Command: sed -i 's|uses: \$/\.github/workflows/hygiene\.yml|uses: ./.github/workflows/hygiene.yml|' .github/workflows/ci.yml
+- Effect: .github/workflows/ci.yml:13 became `uses: ./.github/workflows/hygiene.yml` (workspace-relative form).
+
+## RED confirmation (sabotaged state)
+1. zizmor-sim grep: `git grep -n '\./\.github/workflows' -- .github/`
+   -> `.github/workflows/ci.yml:13:    uses: ./.github/workflows/hygiene.yml`, exit 0 (FOUND = RED). Check is non-vacuous: PROVEN.
+2. Real zizmor (uvx zizmor@1.30.1 --format=plain .): exit 12 with 1 low finding:
+   `help[self-repository]: use GitHub's dedicated self-repository syntax`
+   `--> ./.github/workflows/ci.yml:13:11 ... uses: ./.github/workflows/hygiene.yml ... ^^^ use '$/...' instead of './...'`
+   `= note: audit confidence -> High / = note: this finding has an auto-fix / = help: audit documentation -> https://docs.zizmor.sh/audits/#self-repository`
+   `9 findings (8 suppressed, 1 unsafe fixes): 0 informational, 1 low, 0 medium, 0 high`
+   (The 8 suppressed are offline-mode suppressions, present in both states.)
+3. actionlint on sabotaged state: exit 0 (clean) — local actionlint predates the July-2026 $/ syntax; see qa-run.log section 6. Not a repo gate.
+
+## GREEN restoration
+- Revert: `git checkout -- .github/workflows/ci.yml`
+- After revert `grep -n "uses:" .github/workflows/ci.yml` -> 13: uses: $/.github/workflows/hygiene.yml (restored).
+- `git status --short` -> empty for tracked files (only untracked docs/evidence/fleet-ci-fix/ logs remain). CLEAN.
+- Re-ran on restored state: zizmor@1.30.1 -> "No findings to report. Good job! (8 suppressed)", exit 0 (GREEN); zizmor-sim grep -> exit 1 no matches (GREEN).
+- Sabotage was re-applied a second time to capture the full verbatim zizmor finding above, then reverted again with identical clean proof (final `git status --short` shows no tracked modifications).

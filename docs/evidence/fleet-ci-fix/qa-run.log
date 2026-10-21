@@ -1,0 +1,41 @@
+# QA run log — fleet-ci-fix verification (branch feat/fleet-sync-standardization @ 93d957a)
+
+Target worktree: /home/john/Projects/.github-fleet-sync
+Branch: feat/fleet-sync-standardization, tip 93d957a (parent 1cb9989, NOT pushed)
+Commit under QA: 93d957a "fix(ci): satisfy zizmor self-syntax and exclude audit evidence from local-path scan"
+  - .github/workflows/ci.yml:  uses ./.github/workflows/hygiene.yml -> $/.github/workflows/hygiene.yml + exclude block (docs/evidence, docs/reports)
+  - .github/workflows/ocr.yml: uses ./.github/workflows/ocr-review.yml -> $/.github/workflows/ocr-review.yml
+Date (UTC): 2026-10-21. Verifier: agency-qa (independent, no commits, no subagents, no push).
+
+## 1. Full file reads from disk
+- .github/workflows/ci.yml (40 lines): hygiene job uses $/.github/workflows/hygiene.yml with audit_workflows:true and exclude docs/evidence+docs/reports; lint job = jq labels, jq manifest, validate-skills, shellcheck. CONFIRMED.
+- .github/workflows/ocr.yml (42 lines): review job uses $/.github/workflows/ocr-review.yml, OCR_LLM_TOKEN forwarded. CONFIRMED.
+
+## 2. uses-line grep (zizmor-sim for self-repository syntax)
+- `grep -n "uses:" .github/workflows/ci.yml` -> 13: uses: $/.github/workflows/hygiene.yml ; 24: actions/checkout@11d5960a... (pinned). No ./ self-ref.
+- `grep -n "uses:" .github/workflows/ocr.yml` -> 40: uses: $/.github/workflows/ocr-review.yml. No ./ self-ref.
+- `git grep -n '\./\.github/workflows' -- .github/` -> exit 1, no matches (zero ./ self-refs in workflows). CLEAN.
+- Rationale for $/ (verified against primary sources, not memory): zizmor docs (docs.zizmor.sh/audits, self-repository audit, introduced v1.30.0) state: "As of July 2026, GitHub supports a new self-repository syntax (uses: $/...) ..." Ref: GitHub Blog changelog 2026-07-30. Repo pins zizmor@1.30.1 in hygiene.yml, which contains this audit. $/ is therefore the auditor-recommended form. CONFIRMED.
+
+## 3. shellcheck / bash -n / jq / validate-skills
+- `shellcheck scripts/*.sh` -> exit 0, no output. GREEN.
+- `bash -n` on scripts/sync-fleet.sh, sync-labels.sh, validate-skills.sh -> all exit 0. GREEN x3.
+- `jq -e 'type=="array" and all(...)' labels.json` -> true, exit 0. GREEN.
+- `jq -e '.schema_version==1 and ...' fleet-manifest.json` -> true, exit 0. GREEN.
+- `bash scripts/validate-skills.sh` -> "Validated 4 skill(s) in <root>/skills.", exit 0. GREEN.
+
+## 4. Hygiene local-path scan (exact PATTERN from .github/workflows/hygiene.yml)
+- WITHOUT excludes (`git grep -nIE "$PATTERN" -- .`): exit 0 with matches ONLY in docs/evidence/fleet-rebase/ and docs/reports/. Exactly the two dirs ci.yml excludes. AS EXPECTED.
+- WITH ci.yml excludes (... ':(exclude)docs/evidence' ':(exclude)docs/reports'): exit 1, no output. CLEAN.
+
+## 5. zizmor (exact pinned auditor: uvx zizmor@1.30.1, same as hygiene.yml)
+- On current ($/) state: "No findings to report. Good job! (8 suppressed)" -> exit 0. GREEN.
+- (Sabotaged ./ state result recorded in red-proofs.log.)
+
+## 6. Observation (non-blocking): local actionlint binary predates $/ syntax
+- Installed actionlint reports `workflow-call` errors on ci.yml:13 and ocr.yml:40 for $/ (exit 1), and is clean (exit 0) on ./.
+- Per GitHub changelog 2026-07-30 + zizmor v1.30.x docs, $/ IS valid current GitHub syntax; actionlint's rule set predates it.
+- actionlint is NOT executed by any workflow step in this repo (ci.yml lint job runs jq/validate-skills/shellcheck only; hygiene.yml runs zizmor only; .github/actionlint.yaml is config synced to fleet targets). Hence observation only, not a gate failure.
+
+## 7. Final state
+- Sabotage reverted via `git checkout -- .github/workflows/ci.yml`; `git status --short` shows only untracked docs/evidence/fleet-ci-fix/ log files, zero modifications to tracked files. Nothing committed. Nothing pushed.
