@@ -7,7 +7,7 @@ Organization-wide defaults, shared Agent Skills, polyglot Lefthook v2 configurat
 GitHub automatically applies these files to any `Heretek-AI` repository that does not commit its own override at the same path:
 
 - `SECURITY.md` and `CONTRIBUTING.md`
-- `.github/ISSUE_TEMPLATE/` (`bug.yml`, `task.yml`, `epic.yml`, `audit.yml`, and `config.yml`)
+- `.github/ISSUE_TEMPLATE/` (`bug.yml`, `task.yml`, `epic.yml`, `audit.yml`, `security-contact.yml`, and `config.yml`)
 - `.github/pull_request_template.md`
 
 > **Important:** Do not copy `.github/ISSUE_TEMPLATE/*` into child repositories unless a repository needs to replace the entire default set of issue forms.

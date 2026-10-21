@@ -42,11 +42,13 @@ Enforces `Heretek-AI` repository hygiene and GitHub Actions supply-chain hardeni
    uvx zizmor@1.30.1 --format=plain .
    ```
 
-4. **Validate Agent Skills (`SKILL.md`).** If the repository contains `.agents/skills/` or `skills/`, run the validator:
+4. **Validate Agent Skills (`SKILL.md`).** In `Heretek-AI/.github` only, validate the canonical `skills/` directory:
 
    ```bash
    bash scripts/validate-skills.sh
    ```
+
+   In downstream repositories, use their documented skill validation command when available. Fleet sync copies skills into `.agents/skills/` but does not install `scripts/validate-skills.sh`; do not assume that command exists there.
 
 ## Gotchas
 

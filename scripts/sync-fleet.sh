@@ -35,6 +35,10 @@ short_sha="$(git -C "$root" rev-parse --short HEAD)"
 work_tmp="$(mktemp -d -t heretek-fleet-sync-XXXXXX)"
 trap 'rm -rf "$work_tmp"' EXIT
 
+if [ "$dry_run" = false ]; then
+  gh auth setup-git
+fi
+
 echo "=== Heretek-AI Fleet Sync (@$short_sha, dry_run=$dry_run) ==="
 
 while IFS=$'	' read -r repo_name profile actions_enabled; do
