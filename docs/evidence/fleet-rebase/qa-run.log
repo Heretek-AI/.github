@@ -1,0 +1,72 @@
+# QA RUN LOG — fleet rebase acceptance
+date_utc=2026-10-21T21:56:07Z
+worktree=/home/john/Projects/.github-fleet-sync
+branch=feat/fleet-sync-standardization tip=8d33643 base=b3afb81
+pre_reads=README.md docs/organization-governance.md templates/AGENTS.md docs/reports/fleet-rebase-implementation.md
+
+## GREEN (pre-sabotage) acceptance
+### jq labels.json
+true
+jq-labels exit=0
+### jq fleet-manifest.json
+true
+jq-manifest exit=0
+### manifest counts
+repos=32 profiles=4 keys=bun-biome,python-uv,node-zerodep,universal
+bun-biome: 11
+node-zerodep: 2
+python-uv: 1
+universal: 18
+### labels names
+audit bug cross-repo dependencies epic human-only org-sync release security task upstream 
+label bug present
+label task present
+label org-sync present
+label security present
+### shellcheck
+shellcheck exit=0
+### bash -n
+scripts/sync-fleet.sh exit=0
+scripts/sync-labels.sh exit=0
+scripts/validate-skills.sh exit=0
+### validate-skills
+Validated 4 skill(s) in /home/john/Projects/.github-fleet-sync/skills.
+validate-skills exit=0
+### hygiene1
+hygiene1 exit=1 (want 1)
+### hygiene2
+hygiene2 exit=1 (want 1)
+### force check
+bare-force-grep exit=1 (want 1)
+120:  git -C "$clone_dir" push --force-with-lease origin "$sync_branch"
+### uses dollar
+no-dollar-uses OK
+.github/workflows/ci.yml:13:    uses: ./.github/workflows/hygiene.yml
+.github/workflows/ci.yml:21:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+.github/workflows/ocr.yml:40:    uses: ./.github/workflows/ocr-review.yml
+### security-contact
+-rw-r--r--. 1 john john 701 Oct 21 17:54 .github/ISSUE_TEMPLATE/security-contact.yml
+17:          required: true
+16:        - label: I need a private reporting channel and have included no vulnerability details.
+input field types:
+5:  - type: markdown
+11:  - type: checkboxes
+### modes
+     33 100644
+      3 100755
+
+## POST-RESTORE GREEN re-verification (after all red-proofs reverted)
+true
+jq-labels exit=0
+true
+jq-manifest exit=0
+shellcheck exit=0
+Validated 4 skill(s) in /home/john/Projects/.github-fleet-sync/skills.
+validate exit=0
+hygiene1 exit=1 (want 1)
+hygiene2 exit=1 (want 1)
+?? docs/evidence/
+?? docs/reports/
+8d33643 fix(fleet): correct sync authentication and branch pushes, tighten skill checks, and add security contact form
+95dd23c feat(fleet): standardize org package with fleet-sync fan-out
+b3afb81 Merge pull request #3 from Heretek-AI/v2

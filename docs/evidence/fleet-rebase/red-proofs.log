@@ -1,0 +1,163 @@
+# RED-PROOF LOG — fleet rebase QA (mandatory sabotage)
+date_utc=2026-10-21T21:56:10Z
+tip=8d33643 branch=feat/fleet-sync-standardization
+method: minimal sabotage -> confirm check exits 1 -> git checkout -- <file> -> verify clean
+
+=== R1 labels.json jq ===
+diff --git a/labels.json b/labels.json
+index 8237be1..4e42988 100644
+--- a/labels.json
++++ b/labels.json
+@@ -1,7 +1,7 @@
+ [
+   {
+     "name": "bug",
+-    "color": "d73a4a",
++    "color": "ZZZZZZ",
+     "description": "Something behaves differently from what the docs or tests say"
+   },
+   {
+@@ -54,4 +54,4 @@
+     "color": "1d76db",
+     "description": "Automated standardization PR from Heretek-AI/.github"
+   }
+-]
++]
+\ No newline at end of file
+R1 sabotaged jq-labels exit=1 (want 1)
+R1 revert: CLEAN
+R1 restored exit=0 (want 0)
+=== R2 fleet-manifest.json jq ===
+diff --git a/fleet-manifest.json b/fleet-manifest.json
+index 9dccf72..9d88063 100644
+--- a/fleet-manifest.json
++++ b/fleet-manifest.json
+@@ -1,5 +1,5 @@
+ {
+-  "schema_version": 1,
++  "schema_version": 999,
+   "organization": "Heretek-AI",
+   "sync_branch": "chore/sync-org-standards",
+   "profiles": {
+@@ -222,4 +222,4 @@
+R2 sabotaged jq-manifest exit=1 (want 1)
+R2 revert: CLEAN
+R2 restored exit=0 (want 0)
+=== R3 shellcheck ===
+diff --git a/scripts/sync-labels.sh b/scripts/sync-labels.sh
+index 2b61043..5088852 100755
+--- a/scripts/sync-labels.sh
++++ b/scripts/sync-labels.sh
+@@ -32,3 +32,4 @@ for repo in "$@"; do
+     fi
+   done < <(jq -r '.[] | [.name, .color, .description] | @tsv' "$root/labels.json")
+ done
++echo $UNQUOTED_SABOTAGE_VAR
+R3 sabotaged shellcheck exit=1 (want 1)
+R3 revert: CLEAN
+R3 restored exit=0 (want 0)
+=== R4 bash -n ===
+--- a/scripts/sync-labels.sh
++++ b/scripts/sync-labels.sh
+@@ -32,3 +32,5 @@ for repo in "$@"; do
+     fi
+   done < <(jq -r '.[] | [.name, .color, .description] | @tsv' "$root/labels.json")
+ done
++
++if [ -z "$x" ]; then echo hi
+R4 sabotaged bash-n exit=2 (want 1)
+R4 revert: CLEAN
+R4 restored exit=0 (want 0)
+=== R5 validate-skills ===
+diff --git a/skills/evidence-pr/SKILL.md b/skills/evidence-pr/SKILL.md
+index 38b1d4a..8dac0b7 100644
+--- a/skills/evidence-pr/SKILL.md
++++ b/skills/evidence-pr/SKILL.md
+@@ -1,5 +1,5 @@
+ ---
+-name: evidence-pr
++name: WRONG_NAME
+ description: Prepare and verify an evidence-backed pull request following Heretek-AI conventions. Use whenever staging changes, running pre-PR verification, writing a pull request body, or checking CI status after a push.
+ license: MIT
+ compatibility: opencode claude codex copilot
+R5 sabotaged validate-skills exit=1 (want 1)
+R5 revert: CLEAN
+Validated 4 skill(s) in /home/john/Projects/.github-fleet-sync/skills.
+=== R6 hygiene (both patterns) ===
+--- a/scripts/sync-labels.sh
++++ b/scripts/sync-labels.sh
+@@ -32,3 +32,5 @@ for repo in "$@"; do
+     fi
+   done < <(jq -r '.[] | [.name, .color, .description] | @tsv' "$root/labels.json")
+ done
++# sabotage: machine-local path
++# see file:///home/john/Projects/.github-fleet-sync for details
+R6a sabotaged hygiene1 exit=0 (want 0 found / RED)
+R6b sabotaged hygiene2 exit=0 (want 0 found / RED)
+R6 revert: CLEAN
+R6a restored exit=1 (want 1)
+R6b restored exit=1 (want 1)
+=== R7 bare --force ===
+diff --git a/scripts/sync-fleet.sh b/scripts/sync-fleet.sh
+index 8c81af9..b45e9be 100755
+--- a/scripts/sync-fleet.sh
++++ b/scripts/sync-fleet.sh
+@@ -117,7 +117,7 @@ while IFS=$'	' read -r repo_name profile actions_enabled; do
+   git -C "$clone_dir" config user.email "heretek-fleet-sync[bot]@users.noreply.github.com"
+   git -C "$clone_dir" add -A
+   git -C "$clone_dir" commit --signoff -m "chore(org-sync): propagate Heretek-AI/.github@$short_sha standards"
+-  git -C "$clone_dir" push --force-with-lease origin "$sync_branch"
++  git -C "$clone_dir" push --force origin "$sync_branch"
+ 
+   pr_title="chore(org-sync): sync Heretek-AI/.github@$short_sha standards ($profile)"
+   pr_body="$(cat <<EOF
+R7 sabotaged bare-force-grep exit=0 (want 0 found / RED)
+0
+R7 revert: CLEAN
+R7 restored bare-force exit=1 (want 1)
+120:  git -C "$clone_dir" push --force-with-lease origin "$sync_branch"
+=== R8 ./ vs $/ ===
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index e85c324..397ab17 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -10,7 +10,7 @@ permissions:
+ 
+ jobs:
+   hygiene:
+-    uses: ./.github/workflows/hygiene.yml
++    uses: $/.github/workflows/hygiene.yml
+     with:
+       audit_workflows: true
+ 
+R8 sabotaged dollar-uses-grep exit=0 (want 0 found / RED)
+R8 revert: CLEAN
+R8 restored: no-dollar-uses OK
+=== R9 security-contact ===
+diff --git a/.github/ISSUE_TEMPLATE/security-contact.yml b/.github/ISSUE_TEMPLATE/security-contact.yml
+index 4ec275a..d7f10bb 100644
+--- a/.github/ISSUE_TEMPLATE/security-contact.yml
++++ b/.github/ISSUE_TEMPLATE/security-contact.yml
+@@ -13,5 +13,5 @@ body:
+     attributes:
+       label: Private reporting channel
+       options:
+-        - label: I need a private reporting channel and have included no vulnerability details.
++        - label: I need help.
+           required: true
+R9 sabotaged checkbox-grep exit=1 (want 1 = RED, checkbox missing)
+R9 revert: CLEAN
+16:        - label: I need a private reporting channel and have included no vulnerability details.
+5:  - type: markdown
+11:  - type: checkboxes
+=== R10 manifest 32 repos / labels content ===
+R10a sabotaged 32-count exit=1 (want 1 RED)
+R10a restored exit=0 (want 0)
+R10b sabotaged org-sync-present exit=1 (want 1 RED)
+R10b restored exit=0 (want 0)
+
+=== FINAL tracked status (must be clean) ===
+?? docs/evidence/
+?? docs/reports/
+tracked-dirty (excl ??): 0 (want 0)
+tip=8d33643 (want 8d33643)
