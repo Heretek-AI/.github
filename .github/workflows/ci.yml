@@ -10,9 +10,12 @@ permissions:
 
 jobs:
   hygiene:
-    uses: ./.github/workflows/hygiene.yml
+    uses: $/.github/workflows/hygiene.yml
     with:
       audit_workflows: true
+      exclude: |
+        docs/evidence
+        docs/reports
 
   lint:
     name: Labels and scripts
