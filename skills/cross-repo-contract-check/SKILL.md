@@ -28,7 +28,7 @@ Per `Heretek-AI/.github` ADR 0001, repositories in the agent-tooling family (`IU
 3. **Apply lockstep or independent release rules.**
    - `IUMBTEMS` packages (`@heretek-ai/epistemic-swarm`, `es-core`, `es-cli`) release in lockstep at identical version numbers.
    - `@opencode/plugin` v2 pins move independently per repository (`package.json` is the source of truth).
-4. **Label cross-repo pull requests.** Apply the `cross-repo` label and reference the companion issue or commit in `Heretek-AI/<repo>#<number>` format.
+4. **Label cross-repo pull requests.** Apply the `cross-repo` label. Reference companion issues and pull requests as `Heretek-AI/<repo>#<number>`. Record commits with the repository name and full commit SHA, as `Heretek-AI/<repo>@<full-commit-sha>`.
 
 ## Gotchas
 

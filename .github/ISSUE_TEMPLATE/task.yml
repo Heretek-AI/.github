@@ -26,6 +26,8 @@ body:
       label: Verification commands
       description: Exact commands that must exit 0 to prove completion.
       render: shell
+    validations:
+      required: true
   - type: textarea
     id: scope
     attributes:

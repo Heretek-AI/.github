@@ -37,6 +37,6 @@ permissions:
 
 jobs:
   review:
-    uses: $/.github/workflows/ocr-review.yml
+    uses: ./.github/workflows/ocr-review.yml
     secrets:
       OCR_LLM_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}

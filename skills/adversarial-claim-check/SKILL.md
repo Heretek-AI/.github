@@ -25,14 +25,15 @@ Proves that a repository's claims, dependency pins, and security invariants hold
 
    ```bash
    AUDIT_TMP="$(mktemp -d -t heretek-check-XXXXXX)"
+   trap 'git worktree remove --force "$AUDIT_TMP/wt" || :; rm -rf "$AUDIT_TMP"' EXIT
    git worktree add --detach "$AUDIT_TMP/wt" HEAD
-   trap 'git worktree remove --force "$AUDIT_TMP/wt" && rm -rf "$AUDIT_TMP"' EXIT
    ```
 
 2. **Verify package & lockfile truth.**
    - **Bun / Node**: Run `npm pack --dry-run` (or `bun pm pack --dry-run`) inside `"$AUDIT_TMP/wt"` and confirm every entry point (`main`, `exports`, `bin`, `files`) resolves to a built file that exists.
    - **Python (`uv`)**: Run `uv lock --check` and confirm `[tool.uv] exclude-newer = "7 days"` is respected.
-   - **GitHub Actions**: Confirm every `uses:` pin resolves to a 40-char commit SHA.
+   - **GitHub Actions (remote actions)**: Confirm each remote action `uses: owner/repo[/path]@ref` is pinned to a full 40-character commit SHA. Exclude local action paths (`./.github/actions/...`) and Docker references (`docker://...`) from this SHA check.
+   - **GitHub Actions (reusable workflows)**: Separately confirm each remote workflow `uses: owner/repo/.github/workflows/file.yml@ref` is pinned to a full 40-character commit SHA. Exclude local workflow paths (`./.github/workflows/...`).
 
 3. **Sabotage critical invariants.** For each security or correctness invariant changed in the PR:
    - Introduce a 1-line break in `"$AUDIT_TMP/wt"`.

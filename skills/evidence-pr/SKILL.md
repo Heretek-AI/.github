@@ -34,6 +34,21 @@ Every pull request in a `Heretek-AI` repository must prove its claims with execu
    git diff --cached --stat
    ```
 
+   Scan the staged blobs using the repository's no-local-paths pattern (not just the working files):
+
+   ```bash
+   PATTERN='file:///(home|Users|root)/|/(home|Users)/[^/[:space:]"'"'"'`<>]+/(Projects|Documents|Desktop|Downloads|\.gemini|\.claude|\.codex|\.cursor)(/|[^A-Za-z0-9_-]|$)'
+   if git grep --cached -nIE "$PATTERN" -- .; then
+     echo "ERROR: Machine-local paths found in staged content." >&2
+     exit 1
+   else
+     scan_status=$?
+     [ "$scan_status" -eq 1 ] || exit "$scan_status"
+   fi
+   ```
+
+   Resolve any matches or scan errors before claiming the no-local-paths invariant is verified.
+
 3. **Run local pre-commit and test gates.** Execute Lefthook and the repository's canonical test command, capturing the exact output:
 
    ```bash
