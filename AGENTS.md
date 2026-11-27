@@ -9,7 +9,7 @@ Canonical agent instructions for `Heretek-AI/.github` (the organization control 
 | Active fleet inventory & tiers | `fleet-manifest.json` (`schema_version: 2`) | `jq empty fleet-manifest.json && python3 scripts/audit_org.py` |
 | Organization labels | `labels.json` | `bash scripts/sync-labels.sh --update <owner/repo>` |
 | Unified LLM provider profiles | `llm-profiles.json` | `bash scripts/set-llm-profile.sh <profile>` |
-| Reusable workflows | `.github/workflows/{hygiene,ocr-review,resolve-runner}.yml` | `uvx "zizmor@1.30.1" --format=plain .` |
+| Reusable workflows | `.github/workflows/{hygiene,ocr-review,resolve-runner,security-scan,code-quality,secfoo-audit}.yml` | `uvx "zizmor@1.30.1" --format=plain .` |
 | Shared Agent Skills | `skills/*/SKILL.md` | `bash scripts/validate-skills.sh` |
 | Lefthook v2 stack profiles | `templates/lefthook/*.yml` | Synced to fleet via `scripts/sync-fleet.sh` |
 | Tier 1 branch & tag rulesets | `templates/rulesets/tier1-{main,tags}.json` | `bash scripts/sync-rulesets.sh [--dry-run]` |
