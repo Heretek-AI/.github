@@ -157,8 +157,13 @@ while IFS=$'\t' read -r repo_name tier profile actions_enabled; do
   git -C "$clone_dir" config user.email "heretek-fleet-sync[bot]@users.noreply.github.com"
   git -C "$clone_dir" add -A
   git -C "$clone_dir" commit --signoff -m "chore(org-sync): propagate Heretek-AI/.github@$short_sha standards"
-  git -C "$clone_dir" fetch --depth=1 origin "$sync_branch:refs/remotes/origin/$sync_branch" 2>/dev/null || true
-  if ! git -C "$clone_dir" push --force-with-lease origin "$sync_branch"; then
+  remote_sha="$(git -C "$clone_dir" ls-remote --heads origin "$sync_branch" | awk '{print $1}')"
+  if [ -n "$remote_sha" ]; then
+    push_cmd=(git -C "$clone_dir" push --force-with-lease="$sync_branch:$remote_sha" origin "$sync_branch")
+  else
+    push_cmd=(git -C "$clone_dir" push origin "$sync_branch")
+  fi
+  if ! "${push_cmd[@]}"; then
     echo "::warning::Failed to push $sync_branch to $full_repo; continuing with remaining repositories."
     continue
   fi
