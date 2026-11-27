@@ -1,6 +1,6 @@
 name: OpenCodeReview
 
-# Reusable PR code review workflow powered by Heretek-AI/open-code-review.
+# Reusable PR code review workflow powered by alibaba/open-code-review.
 # Uses canonical LLM_* org variables/secrets with automatic fallback to legacy
 # OCR_LLM_* names. Non-blocking by design: upstream LLM rate limits or outages
 # emit a warning without failing required PR checks. Automated org-sync PRs are
@@ -97,7 +97,7 @@ jobs:
         id: run-ocr
         if: steps.check-secret.outputs.present == 'true'
         continue-on-error: true
-        uses: Heretek-AI/open-code-review@8eb83340a487b1150af00701b94f01af97e4b4d6 # main
+        uses: alibaba/open-code-review@d4f568f71d3a9d5c5ec972791b1509e40cd31ad1 # main
         with:
           llm_url: ${{ vars.LLM_BASE_URL || vars.OCR_LLM_URL }}
           llm_auth_token: ${{ secrets.LLM_API_KEY || secrets.OCR_LLM_TOKEN }}

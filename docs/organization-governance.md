@@ -38,7 +38,7 @@ All CI configuration is managed centrally at the organization level. Any per-rep
 | `OCR_LLM_URL` | Org Variable | `all` | `https://token-plan-sgp.xiaomimimo.com/v1` |
 | `OCR_LLM_MODEL` | Org Variable | `all` | `mimo-v2.6-flash` |
 | `OCR_LLM_USE_ANTHROPIC` | Org Variable | `all` | `false` |
-| `OCR_LLM_TOKEN` | Org Secret | `all` | API token for `Heretek-AI/open-code-review` |
+| `OCR_LLM_TOKEN` | Org Secret | `all` | API token for `alibaba/open-code-review` |
 
 ### Approved Per-Repository Secret Exceptions
 
