@@ -1,5 +1,9 @@
 name: Secfoo Security Audit
 
+concurrency:
+  group: secfoo-audit-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
   schedule:

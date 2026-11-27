@@ -127,8 +127,8 @@ jobs:
             [ -n "$skill" ] && args+=(--skill "$skill")
           done
 
-          uvx "secfoo@0.3.1" "${args[@]}" > secfoo-result.json
-          uvx "secfoo@0.3.1" export --format sarif --output secfoo-results.sarif || true
+          uvx --no-build "secfoo@0.3.1" "${args[@]}" > secfoo-result.json
+          uvx --no-build "secfoo@0.3.1" export --format sarif --output secfoo-results.sarif || true
 
       - name: Upload secfoo SARIF to GitHub Security
         if: >-
