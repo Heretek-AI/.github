@@ -39,4 +39,5 @@ jobs:
   review:
     uses: Heretek-AI/.github/.github/workflows/ocr-review.yml@0000000000000000000000000000000000000000 # main
     secrets:
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
       OCR_LLM_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}

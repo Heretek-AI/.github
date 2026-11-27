@@ -6,6 +6,11 @@ self-hosted-runner:
     - gfx1151
 
 config-variables:
+  - LLM_PROVIDER
+  - LLM_BASE_URL
+  - LLM_MODEL
+  - LLM_OPENCODE_MODEL
+  - LLM_PROTOCOL
   - OPENCODE_MODEL
   - OCR_LLM_URL
   - OCR_LLM_MODEL

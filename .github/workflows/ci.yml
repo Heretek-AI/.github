@@ -53,6 +53,7 @@ jobs:
 
       - name: Validate JSON templates
         run: |
+          jq -e '.schema_version == 1 and (.profiles | type == "object") and (.profiles[.default_profile] | type == "object")' llm-profiles.json >/dev/null
           for f in templates/rulesets/*.json; do
             [ -f "$f" ] && jq empty "$f"
           done
