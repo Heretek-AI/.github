@@ -172,11 +172,6 @@
   ],
   "forks": [
     {
-      "name": "open-code-review",
-      "kind": "reference",
-      "actions_enabled": false
-    },
-    {
       "name": "heretek-control-core",
       "kind": "reference",
       "actions_enabled": false
