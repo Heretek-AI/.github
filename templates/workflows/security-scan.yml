@@ -1,0 +1,25 @@
+name: Security Scan
+
+concurrency:
+  group: security-scan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-scan:
+    uses: Heretek-AI/.github/.github/workflows/security-scan.yml@0000000000000000000000000000000000000000 # main
+    with:
+      severity: HIGH,CRITICAL
+      exit_code: "0"
+      upload_sarif: true

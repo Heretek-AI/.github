@@ -54,10 +54,16 @@ All active repositories are classified in `fleet-manifest.json` (`schema_version
 - **Tier 3 — Archive Candidates (9 repos):** Tracked in `fleet-manifest.json` (`archive_candidates`) for review and archival via `scripts/hygiene-backfill.sh`.
 - **Forks (10 repos):** Excluded from `fleet-sync` PRs to keep upstream history clean. Pure reference forks (`opencode`, `openclaude`, `rea`, `open-code-review`, `heretek-control-core`) keep `actions_enabled: false`.
 
-## 4. Reusable `OpenCodeReview` & Third-Party Scanner Policy
+## 4. Reusable `OpenCodeReview`, Opt-In Security/Quality Workflows & Third-Party Scanner Policy
 
 - **`OpenCodeReview` (`.github/workflows/ocr-review.yml`):** Non-blocking (`continue-on-error: true` with warning annotation) and automatically skips `chore/sync-org-standards` bot PRs unless manually invoked via `/open-code-review` or `@open-code-review`.
-- **Required security/hygiene gates:** `hygiene.yml` (machine-local paths + `zizmor`) and local Lefthook v2 (`no-local-paths`, `gitleaks`, stack linters, `actionlint`, `zizmor`).
+- **Required security/hygiene gates:** `hygiene.yml` (machine-local paths + `zizmor`) and local Lefthook v2 (`no-local-paths`, `gitleaks`, stack linters, `actionlint`, `zizmor`, plus advisory `fallow` health checks on JS/TS profiles and guarded `tach` boundary checks on `python-uv` profiles when installed).
+- **Opt-in reusable security & quality workflows (advisory by default):**
+  - `security-scan.yml` (`templates/workflows/security-scan.yml`): Deterministic Trivy filesystem scan (`vuln,misconfig,secret`) with SARIF upload to GitHub Security.
+  - `sast-semgrep.yml` (`templates/workflows/sast-semgrep.yml`): Deterministic Semgrep CE multi-language SAST with SARIF upload (supports custom packs such as `0xdea/semgrep-rules` for C/C++ repos).
+  - `code-quality.yml` (`templates/workflows/code-quality.yml`): Deterministic `aislop` scan catching AI-agent anti-patterns with zero runtime LLM usage.
+  - `secfoo-audit.yml` (`templates/workflows/secfoo-audit.yml`): Manual (`workflow_dispatch`) or scheduled BYOK AI security audit using canonical `LLM_*` org vars/secrets with SARIF upload (excludes fork PRs and `chore/sync-org-standards`).
+- **Shared security review skill:** `skills/security-review/SKILL.md` provides a structured threat-model-first review workflow for coding agents and maintainers.
 - **Third-party scanners (`CodeQL`, `SonarCloud`, `Sourcery`):** Kept non-blocking/advisory unless explicitly required in a Tier 1 repository's ruleset.
 
 ## 5. Automated Weekly Drift Detection
