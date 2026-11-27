@@ -1,6 +1,9 @@
 # actionlint configuration for Heretek-AI repositories
 self-hosted-runner:
-  labels: []
+  labels:
+    - stx-halo
+    - rocm
+    - gfx1151
 
 config-variables:
   - OPENCODE_MODEL

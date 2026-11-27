@@ -68,3 +68,4 @@ Conforms to the [Agent Skills Open Specification](https://agentskills.io/specifi
 | `OCR_LLM_MODEL` | Org Variable | `all` | OpenCodeReview model (`mimo-v2.6-flash`) |
 | `OCR_LLM_USE_ANTHROPIC` | Org Variable | `all` | OpenCodeReview protocol toggle (`false` for OpenAI-compatible) |
 | `OCR_LLM_TOKEN` | Org Secret | `all` | OpenCodeReview API token |
+| `RUNNER_PROBE_TOKEN` | Org Secret | `all` | Minimal read-only token (`Organization self-hosted runners: read`) for optional `resolve-runner.yml` fallback |
