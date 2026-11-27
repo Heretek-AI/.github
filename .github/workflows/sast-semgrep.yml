@@ -1,0 +1,98 @@
+name: Semgrep SAST
+
+# Reusable deterministic multi-language SAST scan powered by Semgrep CE.
+# Complements Trivy (SCA/IaC/secrets) with code-level vulnerability and taint
+# rules, uploading SARIF findings to GitHub Security. Advisory (non-blocking)
+# by default while calibrating rulesets across the fleet.
+#
+# Call it from a repository:
+#
+#   jobs:
+#     sast:
+#       uses: Heretek-AI/.github/.github/workflows/sast-semgrep.yml@<commit sha> # main
+#       with:
+#         configs: auto
+#         blocking: false
+
+on:
+  workflow_call:
+    inputs:
+      configs:
+        description: Comma-separated Semgrep --config values (e.g. "auto", "p/default,p/security-audit", or local rule dirs).
+        type: string
+        default: "auto"
+      target:
+        description: Path to scan relative to the repository root.
+        type: string
+        default: "."
+      upload_sarif:
+        description: Upload SARIF results to GitHub Security / Code Scanning.
+        type: boolean
+        default: true
+      blocking:
+        description: Fail the job when Semgrep reports findings (false = advisory warning only).
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  semgrep:
+    name: Semgrep CE SAST
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          enable-cache: true
+
+      - name: Run Semgrep CE scan
+        id: run-semgrep
+        continue-on-error: ${{ !inputs.blocking }}
+        env:
+          SEMGREP_CONFIGS: ${{ inputs.configs }}
+          SCAN_TARGET: ${{ inputs.target }}
+          BLOCKING: ${{ inputs.blocking }}
+          SEMGREP_SEND_METRICS: "off"
+        run: |
+          set -euo pipefail
+          args=(
+            scan
+            --metrics=off
+            --sarif
+            --output semgrep-results.sarif
+          )
+          if [ "$BLOCKING" = "true" ]; then
+            args+=(--error)
+          fi
+
+          IFS=',' read -ra cfg_list <<<"$SEMGREP_CONFIGS"
+          for cfg in "${cfg_list[@]}"; do
+            cfg="${cfg#"${cfg%%[![:space:]]*}"}"
+            cfg="${cfg%"${cfg##*[![:space:]]}"}"
+            [ -n "$cfg" ] && args+=(--config "$cfg")
+          done
+          args+=("$SCAN_TARGET")
+
+          uvx --no-build "semgrep@1.187.0" "${args[@]}"
+
+      - name: Upload Semgrep SARIF to GitHub Security
+        if: always() && inputs.upload_sarif && hashFiles('semgrep-results.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@38112626f97ac1fd7acf3df7ebca51f4677c1b38 # codeql-bundle-v2.27.6
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep-sast
+
+      - name: Emit advisory warning on Semgrep error
+        if: steps.run-semgrep.outcome == 'failure' && !inputs.blocking
+        run: |
+          echo "::warning::Semgrep CE exited non-zero (advisory mode; inspect logs or SARIF results)."

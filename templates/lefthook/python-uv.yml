@@ -64,3 +64,8 @@ pre-push:
         if uv run ty --version >/dev/null 2>&1; then
           uv run ty check
         fi
+    - name: tach-check
+      run: |
+        if [ -f tach.toml ] && command -v tach >/dev/null 2>&1; then
+          tach check || echo "WARN: tach reported Python module-boundary findings (advisory)."
+        fi
