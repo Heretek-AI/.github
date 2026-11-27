@@ -1,0 +1,29 @@
+name: Semgrep SAST
+
+concurrency:
+  group: sast-semgrep-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  sast:
+    uses: Heretek-AI/.github/.github/workflows/sast-semgrep.yml@0000000000000000000000000000000000000000 # main
+    with:
+      # Default multi-language ruleset:
+      configs: auto
+      # Optional C/C++ vulnerability research example (e.g. cpp-cmake repos):
+      # Vendor or pin https://github.com/0xdea/semgrep-rules under .semgrep/0xdea/
+      # and pass: configs: "p/c,p/security-audit,.semgrep/0xdea/c"
+      upload_sarif: true
+      blocking: false
