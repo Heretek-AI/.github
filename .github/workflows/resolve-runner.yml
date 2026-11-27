@@ -1,0 +1,117 @@
+name: Resolve CI Runner
+
+# Reusable optional self-hosted runner resolver with fork-PR trust gate and
+# automatic fallback to GitHub-hosted runners when self-hosted hardware is
+# offline, busy, or unreachable.
+#
+# Usage in a repository workflow:
+#
+#   jobs:
+#     resolve-runner:
+#       uses: Heretek-AI/.github/.github/workflows/resolve-runner.yml@<commit sha> # main
+#       with:
+#         preferred_label: stx-halo
+#       secrets:
+#         RUNNER_PROBE_TOKEN: ${{ secrets.RUNNER_PROBE_TOKEN }}
+#
+#     build:
+#       needs: [resolve-runner]
+#       runs-on: ${{ fromJson(needs.resolve-runner.outputs.runs_on) }}
+
+on:
+  workflow_call:
+    inputs:
+      preferred_label:
+        description: "Self-hosted runner label to prefer when online and trusted (e.g. stx-halo, rocm, gfx1151)"
+        type: string
+        required: false
+        default: "stx-halo"
+      fallback:
+        description: "GitHub-hosted fallback runner label"
+        type: string
+        required: false
+        default: "ubuntu-latest"
+    secrets:
+      RUNNER_PROBE_TOKEN:
+        required: false
+    outputs:
+      runs_on:
+        description: "JSON array suitable for fromJson(needs.resolve-runner.outputs.runs_on)"
+        value: ${{ jobs.resolve.outputs.runs_on }}
+      is_self_hosted:
+        description: "Whether the resolved runner is self-hosted ('true' or 'false')"
+        value: ${{ jobs.resolve.outputs.is_self_hosted }}
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Resolve runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      runs_on: ${{ steps.pick.outputs.runs_on }}
+      is_self_hosted: ${{ steps.pick.outputs.is_self_hosted }}
+    steps:
+      - name: Evaluate trust gate and probe self-hosted runner
+        id: pick
+        env:
+          PROBE_TOKEN: ${{ secrets.RUNNER_PROBE_TOKEN }}
+          PREFERRED_LABEL: ${{ inputs.preferred_label }}
+          FALLBACK: ${{ inputs.fallback }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPO_FULL: ${{ github.repository }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
+          ORG_NAME: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          fallback_json="$(jq -nc --arg f "$FALLBACK" '[$f]')"
+
+          # 1. Trust gate: NEVER execute untrusted fork PRs on self-hosted hardware
+          trusted=false
+          case "$EVENT_NAME" in
+            push|workflow_dispatch|schedule)
+              trusted=true
+              ;;
+            pull_request)
+              if [ "$PR_HEAD_REPO" = "$REPO_FULL" ] && [[ "$PR_AUTHOR_ASSOC" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
+                trusted=true
+              fi
+              ;;
+          esac
+
+          if [ "$trusted" != "true" ]; then
+            echo "::notice::Untrusted or fork event ($EVENT_NAME); routing to $FALLBACK."
+            echo "runs_on=$fallback_json" >> "$GITHUB_OUTPUT"
+            echo "is_self_hosted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 2. Live availability probe (fails safe to fallback runner)
+          if [ -z "$PROBE_TOKEN" ]; then
+            echo "::notice::RUNNER_PROBE_TOKEN is not set; falling back to $FALLBACK."
+            echo "runs_on=$fallback_json" >> "$GITHUB_OUTPUT"
+            echo "is_self_hosted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          online="$(curl -fsSL --max-time 5 \
+            -H "Authorization: Bearer $PROBE_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/orgs/${ORG_NAME}/actions/runners?per_page=100" \
+            | jq --arg lbl "$PREFERRED_LABEL" \
+              '[.runners[] | select(.status == "online" and (.labels | map(.name) | index($lbl)))] | length' \
+            2>/dev/null || echo "0")"
+
+          if [ "${online:-0}" -gt 0 ]; then
+            self_json="$(jq -nc --arg lbl "$PREFERRED_LABEL" '["self-hosted", "linux", "x64", $lbl]')"
+            echo "::notice::Self-hosted runner '$PREFERRED_LABEL' is online ($online available); routing job locally."
+            echo "runs_on=$self_json" >> "$GITHUB_OUTPUT"
+            echo "is_self_hosted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Self-hosted runner '$PREFERRED_LABEL' is offline; falling back to $FALLBACK."
+            echo "runs_on=$fallback_json" >> "$GITHUB_OUTPUT"
+            echo "is_self_hosted=false" >> "$GITHUB_OUTPUT"
+          fi

@@ -57,3 +57,7 @@ All active repositories are classified in `fleet-manifest.json` (`schema_version
 ## 5. Automated Weekly Drift Detection
 
 [`.github/workflows/org-drift-audit.yml`](../.github/workflows/org-drift-audit.yml) runs `scripts/audit_org.py` every Monday at 09:00 UTC (and on `workflow_dispatch`), reporting P0 security drift, untracked active repositories, unapproved per-repo secrets, missing Tier 1 rulesets, license/description gaps, and stalled sync PRs.
+
+## 6. Optional Self-Hosted CI Runner (`stx-halo`)
+
+Heavy CI workloads can opt into the Proxmox VE self-hosted runner (`stx-halo`, `rocm`, `gfx1151`) via [`.github/workflows/resolve-runner.yml`](../.github/workflows/resolve-runner.yml), which enforces a fork-PR trust gate and automatically falls back to `ubuntu-latest` when `stx-halo` is offline. See [`docs/self-hosted-runner-proxmox.md`](self-hosted-runner-proxmox.md) for host hardening and setup.
