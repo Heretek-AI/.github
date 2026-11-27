@@ -55,48 +55,12 @@
   },
   "repositories": [
     {
-      "name": "IUMBTEMS",
-      "tier": 1,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "claude-4-opencode",
-      "tier": 1,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "scraper-swarm",
-      "tier": 1,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
       "name": "GDevelop-Unlocked",
       "tier": 1,
       "profile": "node-zerodep",
       "actions_enabled": true,
       "protected_ruleset": true,
       "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "awesome-opencode",
-      "tier": 1,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "cc0-1.0",
       "secret_exceptions": []
     },
     {
@@ -152,39 +116,12 @@
       ]
     },
     {
-      "name": "Agent-Builder",
-      "tier": 1,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
       "name": "game-engine",
       "tier": 1,
       "profile": "cpp-cmake",
       "actions_enabled": true,
       "protected_ruleset": true,
       "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-v2-config",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": false,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "awesome-harness",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
       "secret_exceptions": []
     },
     {
