@@ -1,0 +1,14 @@
+name: Code Quality
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  code-quality:
+    uses: Heretek-AI/.github/.github/workflows/code-quality.yml@0000000000000000000000000000000000000000 # main
+    with:
+      blocking: false

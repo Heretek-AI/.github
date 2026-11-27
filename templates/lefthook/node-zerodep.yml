@@ -50,3 +50,9 @@ pre-push:
   jobs:
     - name: node-test
       run: node --test
+
+    - name: fallow-health
+      run: |
+        if command -v fallow >/dev/null 2>&1; then
+          fallow health --score || echo "WARN: fallow reported JS/TS health or dead-code findings (advisory)."
+        fi

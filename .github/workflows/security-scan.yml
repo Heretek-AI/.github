@@ -1,0 +1,79 @@
+name: Security Scan
+
+# Reusable deterministic security scan powered by Trivy (SCA vulnerabilities,
+# IaC/config misconfigurations, and secret detection) with optional SARIF upload
+# to GitHub Code Scanning. Advisory (exit_code: "0") by default while calibrating.
+#
+# Call it from a repository:
+#
+#   jobs:
+#     security-scan:
+#       uses: Heretek-AI/.github/.github/workflows/security-scan.yml@<commit sha> # main
+#       with:
+#         severity: HIGH,CRITICAL
+#         exit_code: "0"
+#         upload_sarif: true
+
+on:
+  workflow_call:
+    inputs:
+      scan_ref:
+        description: Path to scan relative to the repository root.
+        type: string
+        default: "."
+      scanners:
+        description: Comma-separated Trivy scanners (vuln,misconfig,secret).
+        type: string
+        default: "vuln,misconfig,secret"
+      severity:
+        description: Comma-separated severities to report (LOW,MEDIUM,HIGH,CRITICAL).
+        type: string
+        default: "HIGH,CRITICAL"
+      ignore_unfixed:
+        description: Ignore vulnerabilities without an available upstream fix.
+        type: boolean
+        default: true
+      exit_code:
+        description: Exit code when findings are detected ("0" advisory, "1" blocking).
+        type: string
+        default: "0"
+      upload_sarif:
+        description: Upload SARIF results to GitHub Security / Code Scanning.
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  trivy:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy filesystem scan (SARIF)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ inputs.scan_ref }}
+          scanners: ${{ inputs.scanners }}
+          severity: ${{ inputs.severity }}
+          ignore-unfixed: ${{ inputs.ignore_unfixed }}
+          exit-code: ${{ inputs.exit_code }}
+          format: sarif
+          output: trivy-results.sarif
+          hide-progress: true
+
+      - name: Upload Trivy SARIF to GitHub Security
+        if: always() && inputs.upload_sarif && hashFiles('trivy-results.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@38112626f97ac1fd7acf3df7ebca51f4677c1b38 # codeql-bundle-v2.27.6
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs

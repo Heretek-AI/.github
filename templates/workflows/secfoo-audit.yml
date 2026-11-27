@@ -1,0 +1,23 @@
+name: Secfoo Security Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secfoo:
+    uses: Heretek-AI/.github/.github/workflows/secfoo-audit.yml@0000000000000000000000000000000000000000 # main
+    with:
+      skills: sast,secret-scanning
+      depth: quick
+      max_cost: "2.00"
+      upload_sarif: true
+      blocking: false
+    secrets:
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      OCR_LLM_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}

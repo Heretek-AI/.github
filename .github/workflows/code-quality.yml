@@ -1,0 +1,57 @@
+name: Code Quality
+
+# Reusable deterministic code-quality scan powered by scanaislop/aislop.
+# Catches AI-agent anti-patterns (swallowed exceptions, dead code, narrative
+# comments, unsafe casts, duplication) with zero LLM usage at runtime.
+# Advisory (non-blocking) by default while calibrating across the fleet.
+#
+# Call it from a repository:
+#
+#   jobs:
+#     code-quality:
+#       uses: Heretek-AI/.github/.github/workflows/code-quality.yml@<commit sha> # main
+#       with:
+#         blocking: false
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: Path to scan relative to the repository root.
+        type: string
+        default: "."
+      blocking:
+        description: Fail the job when aislop reports issues (false = advisory warning only).
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  aislop:
+    name: aislop deterministic scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+
+      - name: Run aislop scan
+        id: run-aislop
+        continue-on-error: ${{ !inputs.blocking }}
+        env:
+          SCAN_TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          uvx "aislop@0.23.0" scan "$SCAN_TARGET"
+
+      - name: Emit advisory notice on aislop findings
+        if: steps.run-aislop.outcome == 'failure' && !inputs.blocking
+        run: |
+          echo "::warning::aislop reported code-quality findings (advisory mode; review job logs for details)."

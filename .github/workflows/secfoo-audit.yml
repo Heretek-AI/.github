@@ -1,0 +1,148 @@
+name: Secfoo Security Audit
+
+# Reusable opt-in AI security audit powered by secfoo-com/secfoo.
+# Designed for manual (workflow_dispatch) or scheduled audits on trusted branches,
+# using canonical LLM_* org variables/secrets (with OCR_LLM_* fallback).
+# Advisory (non-blocking) by default with SARIF export to GitHub Security.
+#
+# Call it from a repository:
+#
+#   jobs:
+#     secfoo:
+#       uses: Heretek-AI/.github/.github/workflows/secfoo-audit.yml@<commit sha> # main
+#       secrets:
+#         LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+#         OCR_LLM_TOKEN: ${{ secrets.OCR_LLM_TOKEN }}
+
+on:
+  workflow_call:
+    inputs:
+      skills:
+        description: Comma-separated secfoo skills (e.g. sast,secret-scanning,sca).
+        type: string
+        default: "sast,secret-scanning"
+      depth:
+        description: Review depth (quick, standard, deep).
+        type: string
+        default: "quick"
+      max_cost:
+        description: Maximum USD spend cap per run.
+        type: string
+        default: "2.00"
+      upload_sarif:
+        description: Upload SARIF findings to GitHub Security / Code Scanning.
+        type: boolean
+        default: true
+      blocking:
+        description: Fail the job if secfoo returns a non-zero exit code.
+        type: boolean
+        default: false
+    secrets:
+      LLM_API_KEY:
+        required: false
+      OCR_LLM_TOKEN:
+        required: false
+
+permissions: {}
+
+jobs:
+  secfoo:
+    name: secfoo AI security audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Never run against untrusted fork PRs or automated org-sync branches.
+    if: >-
+      github.head_ref != 'chore/sync-org-standards'
+      && (
+        github.event_name != 'pull_request'
+        || github.event.pull_request.head.repo.full_name == github.repository
+      )
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve LLM configuration
+        id: check-llm
+        env:
+          API_KEY: ${{ secrets.LLM_API_KEY || secrets.OCR_LLM_TOKEN }}
+          BASE_URL: ${{ vars.LLM_BASE_URL || vars.OCR_LLM_URL }}
+          MODEL: ${{ vars.LLM_MODEL || vars.OCR_LLM_MODEL }}
+        run: |
+          if [ -z "$API_KEY" ] || [ -z "$BASE_URL" ] || [ -z "$MODEL" ]; then
+            echo "::notice::LLM_API_KEY/LLM_BASE_URL/LLM_MODEL not configured; skipping secfoo audit."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install uv
+        if: steps.check-llm.outputs.present == 'true'
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+
+      - name: Run secfoo audit
+        id: run-secfoo
+        if: steps.check-llm.outputs.present == 'true'
+        continue-on-error: ${{ !inputs.blocking }}
+        env:
+          LLM_PROTOCOL: ${{ vars.LLM_PROTOCOL || 'openai' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || secrets.OCR_LLM_TOKEN }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL || vars.OCR_LLM_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || vars.OCR_LLM_MODEL }}
+          SECFOO_SKILLS: ${{ inputs.skills }}
+          SECFOO_DEPTH: ${{ inputs.depth }}
+          SECFOO_MAX_COST: ${{ inputs.max_cost }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$LLM_PROTOCOL" = "anthropic" ]; then
+            export ANTHROPIC_API_KEY="$LLM_API_KEY"
+            export ANTHROPIC_BASE_URL="$LLM_BASE_URL"
+            MODEL_ARG="anthropic/${LLM_MODEL#anthropic/}"
+          else
+            export OPENAI_API_KEY="$LLM_API_KEY"
+            export OPENAI_API_BASE="$LLM_BASE_URL"
+            export OPENAI_BASE_URL="$LLM_BASE_URL"
+            MODEL_ARG="openai/${LLM_MODEL#openai/}"
+          fi
+
+          args=(
+            run
+            --agent api
+            --model "$MODEL_ARG"
+            --target .
+            --depth "$SECFOO_DEPTH"
+            --max-cost "$SECFOO_MAX_COST"
+            --project-name "$REPO_NAME"
+            --rescan
+            --json
+          )
+          IFS=',' read -ra skill_list <<<"$SECFOO_SKILLS"
+          for skill in "${skill_list[@]}"; do
+            skill="${skill#"${skill%%[![:space:]]*}"}"
+            skill="${skill%"${skill##*[![:space:]]}"}"
+            [ -n "$skill" ] && args+=(--skill "$skill")
+          done
+
+          uvx "secfoo@0.3.1" "${args[@]}" > secfoo-result.json
+          uvx "secfoo@0.3.1" export --format sarif --output secfoo-results.sarif || true
+
+      - name: Upload secfoo SARIF to GitHub Security
+        if: >-
+          always()
+          && steps.check-llm.outputs.present == 'true'
+          && inputs.upload_sarif
+          && hashFiles('secfoo-results.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@38112626f97ac1fd7acf3df7ebca51f4677c1b38 # codeql-bundle-v2.27.6
+        with:
+          sarif_file: secfoo-results.sarif
+          category: secfoo-audit
+
+      - name: Emit advisory warning on secfoo error
+        if: steps.run-secfoo.outcome == 'failure' && !inputs.blocking
+        run: |
+          echo "::warning::secfoo audit exited non-zero (advisory mode; inspect logs or SARIF results)."
