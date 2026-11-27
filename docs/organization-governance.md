@@ -26,6 +26,12 @@ All CI configuration is managed centrally at the organization level. Any per-rep
 | Name | Type | Visibility | Notes |
 | --- | --- | --- | --- |
 | `ORG_SYNC_TOKEN` | Org Secret | `selected` (`.github` only) | Scoped exclusively to `Heretek-AI/.github` |
+| `LLM_PROVIDER` | Org Variable | `all` | Canonical LLM provider (managed by `scripts/set-llm-profile.sh`) |
+| `LLM_BASE_URL` | Org Variable | `all` | Canonical OpenAI/Anthropic-compatible base URL |
+| `LLM_MODEL` | Org Variable | `all` | Canonical model ID (mirrored to `OCR_LLM_MODEL`) |
+| `LLM_OPENCODE_MODEL` | Org Variable | `all` | Provider-prefixed OpenCode CLI model (mirrored to `OPENCODE_MODEL`) |
+| `LLM_PROTOCOL` | Org Variable | `all` | `openai` or `anthropic` (mirrored to `OCR_LLM_USE_ANTHROPIC`) |
+| `LLM_API_KEY` | Org Secret | `all` | Canonical active LLM API key (mirrored to `OCR_LLM_TOKEN` / provider secret) |
 | `OPENCODE_MODEL` | Org Variable | `all` | `opencode-go/muse-spark-1.3-contributor` |
 | `OPENCODE_API_KEY` | Org Secret | `selected` | Scoped to live-eval repositories |
 | `OPENCODE_GO_API_KEY` | Org Secret | `all` | OpenCode Go inference token |

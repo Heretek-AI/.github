@@ -44,6 +44,7 @@ Every push to `main` that modifies `fleet-manifest.json`, `labels.json`, `skills
 | `scripts/sync-fleet.sh` | Propagates labels, Lefthook v2, `.editorconfig`, Agent Skills, and reusable workflow pins (`--dry-run`, `--repo`, `--tier`) |
 | `scripts/sync-rulesets.sh` | Idempotently enforces Tier 1 zero-bypass `main` and `v*` tag rulesets |
 | `scripts/hygiene-backfill.sh` | Dry-run helper for reference fork Actions-off enforcement and Tier 3 archiving |
+| `scripts/set-llm-profile.sh` | 1-command switcher for org-wide `LLM_*` variables + legacy `OCR_LLM_*`/`OPENCODE_MODEL` mirrors from `llm-profiles.json` |
 
 ## 4. Shared Agent Skills (`skills/`)
 
