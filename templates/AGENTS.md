@@ -21,6 +21,13 @@ command output, a file and line. State what was not run.
   - `adversarial-claim-check`: disposable worktree verification and invariant sabotage testing
 - Run `lefthook install` after cloning and `lefthook run pre-commit` before committing.
 
+## Organization Standards (`Heretek-AI/.github`)
+
+- **Actions SHA pinning:** Org enforces `sha_pinning_required: true`. Pin all third-party actions to full 40-char commit SHAs.
+- **LLM configuration:** Use org-level `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_OPENCODE_MODEL`, `LLM_PROTOCOL`, and `LLM_API_KEY` (never hardcode endpoints/models or add per-repo LLM secrets).
+- **Optional self-hosted CI (`stx-halo`):** Heavy builds may opt in via `Heretek-AI/.github/.github/workflows/resolve-runner.yml` (enforces fork-PR trust gate + automatic fallback to `ubuntu-latest`). Never target `self-hosted` directly without the trust gate.
+- **OpenCodeReview:** Provided via `Heretek-AI/.github/.github/workflows/ocr-review.yml` (non-blocking; invoke manually with `/open-code-review` on a PR comment).
+
 ## Canonical surfaces
 
 <!--
@@ -42,6 +49,7 @@ one that spends money, the one that needs a secret.
 | Invariant | Where |
 | --- | --- |
 | No machine-local paths in tracked files | `lefthook.yml` (`no-local-paths`), `.github/workflows/hygiene.yml` |
+| Workflow security (`zizmor` clean, SHA-pinned) | `.github/workflows/hygiene.yml` (`audit_workflows: true`) |
 
 ## Workflow
 
