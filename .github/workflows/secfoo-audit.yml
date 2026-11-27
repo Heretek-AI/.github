@@ -95,6 +95,8 @@ jobs:
           SECFOO_SKILLS: ${{ inputs.skills }}
           SECFOO_DEPTH: ${{ inputs.depth }}
           SECFOO_MAX_COST: ${{ inputs.max_cost }}
+          UPLOAD_SARIF: ${{ inputs.upload_sarif }}
+          BLOCKING: ${{ inputs.blocking }}
           REPO_NAME: ${{ github.repository }}
         run: |
           set -euo pipefail
@@ -128,7 +130,14 @@ jobs:
           done
 
           uvx --no-build "secfoo@0.3.1" "${args[@]}" > secfoo-result.json
-          uvx --no-build "secfoo@0.3.1" export --format sarif --output secfoo-results.sarif || true
+          if [ "$UPLOAD_SARIF" = "true" ]; then
+            if ! uvx --no-build "secfoo@0.3.1" export --format sarif --output secfoo-results.sarif; then
+              echo "::warning::secfoo SARIF export failed; no SARIF results will be uploaded."
+              if [ "$BLOCKING" = "true" ]; then
+                exit 1
+              fi
+            fi
+          fi
 
       - name: Upload secfoo SARIF to GitHub Security
         if: >-
