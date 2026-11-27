@@ -1,15 +1,16 @@
 # Organization Governance, Hardening & CI Standardization
 
-This document records the organization-wide security baselines, CI secret/variable conventions, zero-bypass branch rulesets, and repository lifecycle state for [`Heretek-AI`](https://github.com/Heretek-AI).
+This document records the organization-wide security baselines, CI secret/variable conventions, zero-bypass branch and tag rulesets, and tiered repository lifecycle state for [`Heretek-AI`](https://github.com/Heretek-AI).
 
 ## 1. Organization Security & Actions Hardening
 
-Enforced via `/orgs/Heretek-AI` and `/orgs/Heretek-AI/actions/permissions/workflow`:
+Enforced via `scripts/harden-org.sh` against `/orgs/Heretek-AI`, `/orgs/Heretek-AI/actions/permissions`, and `/orgs/Heretek-AI/actions/permissions/workflow`:
 
 | Setting | Value | Rationale |
 | --- | --- | --- |
 | `default_workflow_permissions` | `read` | Workflows receive read-only `GITHUB_TOKEN` permissions unless elevated per-job |
 | `can_approve_pull_request_reviews` | `false` | Prevents GitHub Actions workflows from approving pull requests |
+| `sha_pinning_required` | `true` | Requires full-length commit SHA pins for all third-party GitHub Actions |
 | `default_repository_permission` | `read` | Organization members default to read access unless granted team/repo roles |
 | `members_can_create_repositories` | `false` | Restricts new repository creation to organization owners |
 | `web_commit_signoff_required` | `true` | Requires DCO sign-off on web-based commits |
@@ -18,57 +19,41 @@ Enforced via `/orgs/Heretek-AI` and `/orgs/Heretek-AI/actions/permissions/workfl
 | `dependabot_alerts_enabled_for_new_repositories` | `true` | Enables vulnerability alerts without noisy auto-PRs |
 | `dependabot_security_updates_enabled_for_new_repositories` | `false` | Disables automated Dependabot PR noise by default |
 
-Organization Security Configuration `Heretek-AI-org-config-1` (`250992`) has `code_scanning_default_setup: "disabled"`, `dependabot_security_updates: "disabled"`, and `dependency_graph_autosubmit_action: "disabled"` so GitHub does not force-inject unrequested `CodeQL` or `Dependabot` workflows across repositories.
+## 2. Standardized Organization Secrets, Variables & Exceptions
 
----
+All CI configuration is managed centrally at the organization level. Any per-repository secret or variable must be explicitly allowlisted in `fleet-manifest.json` (`secret_exceptions`) and is verified weekly by `scripts/audit_org.py`:
 
-## 2. Standardized Organization Secrets & Variables
-
-Per-repository secrets and per-repository variables are prohibited (`0` repositories have per-repo secrets or variables). All CI configuration is managed centrally at the organization level:
-
-| Name | Type | Visibility | Value / Scope |
+| Name | Type | Visibility | Notes |
 | --- | --- | --- | --- |
-| `OPENCODE_MODEL` | Org Variable | `all` | `opencode/muse-spark-1.3-contributor` |
-| `OPENCODE_API_KEY` | Org Secret | `selected` | Scoped to `IUMBTEMS`, `claude-4-opencode`, `awesome-opencode`, `Agent-Builder` |
+| `ORG_SYNC_TOKEN` | Org Secret | `selected` (`.github` only) | Scoped exclusively to `Heretek-AI/.github` |
+| `OPENCODE_MODEL` | Org Variable | `all` | `opencode-go/muse-spark-1.3-contributor` |
+| `OPENCODE_API_KEY` | Org Secret | `selected` | Scoped to live-eval repositories |
+| `OPENCODE_GO_API_KEY` | Org Secret | `all` | OpenCode Go inference token |
 | `OCR_LLM_URL` | Org Variable | `all` | `https://token-plan-sgp.xiaomimimo.com/v1` |
 | `OCR_LLM_MODEL` | Org Variable | `all` | `mimo-v2.6-flash` |
 | `OCR_LLM_USE_ANTHROPIC` | Org Variable | `all` | `false` |
 | `OCR_LLM_TOKEN` | Org Secret | `all` | API token for `Heretek-AI/open-code-review` |
 
----
+### Approved Per-Repository Secret Exceptions
 
-## 3. Zero-Bypass Default Branch Rulesets
+- `homebrew-tap`: `APP_PRIVATE_KEY`, `APP_ID`, `STX_HALO_ENABLED` (bottle publish & autobump automation)
+- `ProxmoxVE`: `PAT_STANDALONE`, `PAT_WORKFLOW` (upstream helper-scripts sync automation)
 
-The 7 protected repositories enforce active default-branch rulesets with **`bypass_actors: []`** (zero bypass, including organization owners), preventing branch deletion, force-pushes (`non_fast_forward`), and merges without passing required status checks:
+## 3. Tiered Governance & Zero-Bypass Rulesets
 
-| Repository | Ruleset ID | Ruleset Name | Required Status Checks (`github-actions`) |
-| --- | --- | --- | --- |
-| `.github` | `24901162` | `keep summer safe` | `hygiene / No machine-local paths`, `Labels and scripts` |
-| `IUMBTEMS` | `24825429` | `keep summer safe` | `check`, `pack`, `hygiene / No machine-local paths` |
-| `claude-4-opencode` | `24901159` | `keep summer safe` | `unit`, `opencode 2.0.26`, `hygiene / No machine-local paths` |
-| `scraper-swarm` | `24901161` | `keep summer safe` | `Python Suite & Security Checks`, `Frontend Build & Plugin Tests`, `hygiene / No machine-local paths` |
-| `opencode-4-openclaude` | `24901160` | `keep summer safe` | `test`, `hygiene / No machine-local paths` |
-| `GDevelop-Unlocked` | `24861428` | `keep summer safe` | `tier1-smoke`, `byok-mock`, `hygiene / No machine-local paths` |
-| `awesome-opencode` | `25310603` | `main: every commit passes validate` | `validate` |
+All active repositories are classified in `fleet-manifest.json` (`schema_version: 2`):
 
----
+- **Tier 1 — Flagship / Protected (14 repos, including `.github`):** Enforces active zero-bypass (`bypass_actors: []`) default-branch rulesets (`keep summer safe`) and `v*` release-tag protection (`release-tags`) via `scripts/sync-rulesets.sh`, requiring `hygiene / No machine-local paths` plus stack CI checks.
+- **Tier 2 — Standard Active (38 repos):** Receives stack-matched Lefthook v2, `.editorconfig`, shared Agent Skills, and (where `actions_enabled: true`) `hygiene.yml` and non-blocking `ocr.yml`.
+- **Tier 3 — Archive Candidates (9 repos):** Tracked in `fleet-manifest.json` (`archive_candidates`) for review and archival via `scripts/hygiene-backfill.sh`.
+- **Forks (10 repos):** Excluded from `fleet-sync` PRs to keep upstream history clean. Pure reference forks (`opencode`, `openclaude`, `rea`, `open-code-review`, `heretek-control-core`) keep `actions_enabled: false`.
 
-## 4. Reusable `OpenCodeReview` Rollout
+## 4. Reusable `OpenCodeReview` & Third-Party Scanner Policy
 
-All **29 active workflow-enabled repositories** include `.github/workflows/ocr.yml`, which calls `.github/workflows/ocr-review.yml` in `Heretek-AI/.github` (SHA-pinned to `Heretek-AI/open-code-review@8eb83340a487b1150af00701b94f01af97e4b4d6` and `actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5`):
-- Triggers automatically on `pull_request` (`opened`, `synchronize`, `reopened`) and on `@ocr` comments (`issue_comment`) by `OWNER`, `MEMBER`, or `COLLABORATOR` actors.
+- **`OpenCodeReview` (`.github/workflows/ocr-review.yml`):** Non-blocking (`continue-on-error: true` with warning annotation) and automatically skips `chore/sync-org-standards` bot PRs unless manually invoked via `/open-code-review` or `@open-code-review`.
+- **Required security/hygiene gates:** `hygiene.yml` (machine-local paths + `zizmor`) and local Lefthook v2 (`no-local-paths`, `gitleaks`, stack linters, `actionlint`, `zizmor`).
+- **Third-party scanners (`CodeQL`, `SonarCloud`, `Sourcery`):** Kept non-blocking/advisory unless explicitly required in a Tier 1 repository's ruleset.
 
----
+## 5. Automated Weekly Drift Detection
 
-## 5. Repository & Package Lifecycle Summary
-
-- **33 Active First-Party Repositories**:
-  - **29 with GitHub Actions Enabled (`ocr.yml` active)**: `.github`, `IUMBTEMS`, `claude-4-opencode`, `scraper-swarm`, `opencode-4-openclaude`, `GDevelop-Unlocked`, `awesome-opencode`, `Agent-Builder`, `awesome-harness`, `Token-Max`, `heretek-rigs`, `Heretek-Crew`, `heretek-context-router`, `epistemic-factory`, `agency-control-plane`, `The-Agency`, `SwarmOS`, `heretek-devcontainers`, `oh-mine-pi`, `arcane-repo`, `Game-Studio`, `opencode-harness`, `opencode-v2-plugin-teser`, `opencode-rea`, `opencode-searxng-plugin`, `godot-opencode`, `unity.gamedev.kit`, `homebrew-tap`, `ompweb-docker`
-  - **4 Workflow-less Repositories (`actions_enabled: false`)**: `heretek-skills`, `virt-box`, `optimized-prompts`, `free-git`
-- **6 Unarchived Reference Forks (`actions_enabled: false`)**:
-  `opencode`, `openclaude`, `rea`, `open-code-review`, `openrig`, `heretek-control-core`
-- **66 Archived Legacy Repositories (`isArchived: true`, `actions_enabled: false`)**:
-  All superseded forks, pre-September 20 prototypes, and retired builders have Actions disabled and per-repo secrets purged.
-- **Package Registries**:
-  - **Active GHCR Containers (3)**: `ompweb-docker`, `heretek-crew`, `oh-mine-pi` (32 legacy containers deleted).
-  - **Active npm Packages**: `@heretek-ai/epistemic-swarm`, `es-core`, `es-cli`, `@heretek-ai/claude-4-opencode`, `@heretek-ai/opencode-rea`, `@heretek-ai/opencode-searxng-plugin`, `@heretek-ai/token-max` (17 legacy npm packages marked `deprecated` on `registry.npmjs.org`).
+[`.github/workflows/org-drift-audit.yml`](../.github/workflows/org-drift-audit.yml) runs `scripts/audit_org.py` every Monday at 09:00 UTC (and on `workflow_dispatch`), reporting P0 security drift, untracked active repositories, unapproved per-repo secrets, missing Tier 1 rulesets, license/description gaps, and stalled sync PRs.
