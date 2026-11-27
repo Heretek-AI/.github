@@ -21,7 +21,7 @@ jobs:
     name: Labels and scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
 
@@ -29,12 +29,39 @@ jobs:
         run: |
           jq -e 'type == "array" and all(.[]; (.name | type == "string") and (.color | test("^[0-9a-f]{6}$")) and (.description | type == "string"))' labels.json
 
-      - name: Validate fleet-manifest.json schema
+      - name: Validate fleet-manifest.json schema (v2)
         run: |
-          jq -e '.schema_version == 1 and (.profiles | type == "object") and (.repositories | type == "array") and all(.repositories[]; (.name | type == "string") and (.profile | type == "string"))' fleet-manifest.json
+          jq -e '
+            .schema_version == 2
+            and (.organization | type == "string")
+            and (.profiles | type == "object")
+            and (.repositories | type == "array")
+            and (.forks | type == "array")
+            and (.archive_candidates | type == "array")
+            and all(.repositories[];
+              (.name | type == "string")
+              and (.tier == 1 or .tier == 2)
+              and (.profile | type == "string")
+              and (.actions_enabled | type == "boolean")
+              and (.protected_ruleset | type == "boolean")
+            )
+          ' fleet-manifest.json
+          # Ensure every referenced lefthook template exists on disk
+          while IFS= read -r tpl; do
+            test -f "$tpl"
+          done < <(jq -r '.profiles[].lefthook_template' fleet-manifest.json)
+
+      - name: Validate JSON templates
+        run: |
+          for f in templates/rulesets/*.json; do
+            [ -f "$f" ] && jq empty "$f"
+          done
 
       - name: Validate Agent Skills (SKILL.md)
         run: bash scripts/validate-skills.sh
 
       - name: ShellCheck scripts
         run: shellcheck scripts/*.sh
+
+      - name: Python syntax check
+        run: python3 -m py_compile scripts/*.py

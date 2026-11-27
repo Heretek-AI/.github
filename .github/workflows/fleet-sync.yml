@@ -9,7 +9,8 @@ on:
       - "lefthook.yml"
       - "templates/**"
       - "skills/**"
-      - "scripts/**"
+      - "scripts/sync-fleet.sh"
+      - "scripts/sync-labels.sh"
       - ".github/actionlint.yaml"
       - ".github/workflows/hygiene.yml"
       - ".github/workflows/ocr-review.yml"
@@ -21,6 +22,10 @@ on:
         default: true
       target_repo:
         description: "Optional single repository name (e.g. IUMBTEMS) to sync; leave blank for all"
+        type: string
+        default: ""
+      tier:
+        description: "Optional tier filter (1 or 2); leave blank for all active tiers"
         type: string
         default: ""
 
@@ -35,9 +40,9 @@ jobs:
   sync-fleet:
     name: Open standardization PRs across Heretek-AI
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
 
@@ -58,6 +63,7 @@ jobs:
           GH_TOKEN: ${{ secrets.ORG_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
           DRY_RUN: ${{ steps.check-token.outputs.dry_run }}
           TARGET_REPO: ${{ inputs.target_repo }}
+          TARGET_TIER: ${{ inputs.tier }}
         run: |
           set -euo pipefail
           args=()
@@ -66,5 +72,8 @@ jobs:
           fi
           if [ -n "$TARGET_REPO" ]; then
             args+=(--repo "$TARGET_REPO")
+          fi
+          if [ -n "$TARGET_TIER" ]; then
+            args+=(--tier "$TARGET_TIER")
           fi
           bash scripts/sync-fleet.sh "${args[@]}"

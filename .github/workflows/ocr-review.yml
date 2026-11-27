@@ -1,6 +1,9 @@
 name: OpenCodeReview
 
 # Reusable PR code review workflow powered by Heretek-AI/open-code-review.
+# Non-blocking by design: upstream LLM rate limits or outages emit a warning
+# without failing required PR checks. Automated org-sync PRs are skipped unless
+# explicitly requested via `/open-code-review` or `@open-code-review`.
 #
 # Call from a repository's .github/workflows/ocr.yml:
 #
@@ -37,7 +40,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: |
-      github.event_name == 'pull_request'
+      (
+        github.event_name == 'pull_request'
+        && github.head_ref != 'chore/sync-org-standards'
+      )
       || (
         github.event_name == 'issue_comment'
         && github.event.issue.pull_request
@@ -68,7 +74,7 @@ jobs:
       - name: Get PR context
         id: pr-context
         if: steps.check-secret.outputs.present == 'true' && github.event_name == 'issue_comment'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const prNumber = context.issue.number;
@@ -82,7 +88,9 @@ jobs:
             core.setOutput('title', pullRequest.title);
 
       - name: Run OpenCodeReview
+        id: run-ocr
         if: steps.check-secret.outputs.present == 'true'
+        continue-on-error: true
         uses: Heretek-AI/open-code-review@8eb83340a487b1150af00701b94f01af97e4b4d6 # main
         with:
           llm_url: ${{ vars.OCR_LLM_URL || 'https://token-plan-sgp.xiaomimimo.com/v1' }}
@@ -97,3 +105,8 @@ jobs:
           background: ${{ steps.pr-context.outputs.title || github.event.pull_request.title }}
           base_ref: ${{ steps.pr-context.outputs.base_ref }}
           head_sha: ${{ steps.pr-context.outputs.head_sha }}
+
+      - name: Warn on non-blocking OpenCodeReview error
+        if: steps.run-ocr.outcome == 'failure'
+        run: |
+          echo "::warning::OpenCodeReview failed (likely upstream LLM rate limit or outage). Marked non-blocking so PR checks remain actionable."

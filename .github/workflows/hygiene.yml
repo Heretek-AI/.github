@@ -1,7 +1,7 @@
 name: Hygiene
 
 # Reusable check: tracked files must not contain machine-local paths, and
-# workflows must pass static syntax/security checks when enabled.
+# workflows must pass static security checks when enabled.
 #
 # Call it from a repository:
 #
@@ -9,6 +9,7 @@ name: Hygiene
 #     hygiene:
 #       uses: Heretek-AI/.github/.github/workflows/hygiene.yml@<commit sha> # main
 #       with:
+#         audit_workflows: true
 #         exclude: |
 #           path/to/recorded-evidence
 
@@ -20,7 +21,7 @@ on:
         type: string
         default: ""
       audit_workflows:
-        description: Run actionlint and zizmor against .github/workflows/ in a companion job.
+        description: Run zizmor against .github/workflows/ in a companion job.
         type: boolean
         default: false
 
@@ -32,7 +33,7 @@ jobs:
     name: No machine-local paths
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
 
@@ -63,7 +64,7 @@ jobs:
     if: inputs.audit_workflows
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
 
