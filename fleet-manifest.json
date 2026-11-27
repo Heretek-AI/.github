@@ -55,57 +55,12 @@
   },
   "repositories": [
     {
-      "name": "IUMBTEMS",
-      "tier": 1,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "claude-4-opencode",
-      "tier": 1,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "scraper-swarm",
-      "tier": 1,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-4-openclaude",
-      "tier": 1,
-      "profile": "node-zerodep",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
       "name": "GDevelop-Unlocked",
       "tier": 1,
       "profile": "node-zerodep",
       "actions_enabled": true,
       "protected_ruleset": true,
       "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "awesome-opencode",
-      "tier": 1,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "cc0-1.0",
       "secret_exceptions": []
     },
     {
@@ -133,7 +88,11 @@
       "actions_enabled": true,
       "protected_ruleset": true,
       "license_default": "mit",
-      "secret_exceptions": ["APP_PRIVATE_KEY", "APP_ID", "STX_HALO_ENABLED"]
+      "secret_exceptions": [
+        "APP_PRIVATE_KEY",
+        "APP_ID",
+        "STX_HALO_ENABLED"
+      ]
     },
     {
       "name": "heretek-rigs",
@@ -151,16 +110,10 @@
       "actions_enabled": true,
       "protected_ruleset": true,
       "license_default": "mit",
-      "secret_exceptions": ["PAT_STANDALONE", "PAT_WORKFLOW"]
-    },
-    {
-      "name": "Agent-Builder",
-      "tier": 1,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": true,
-      "license_default": "mit",
-      "secret_exceptions": []
+      "secret_exceptions": [
+        "PAT_STANDALONE",
+        "PAT_WORKFLOW"
+      ]
     },
     {
       "name": "game-engine",
@@ -169,159 +122,6 @@
       "actions_enabled": true,
       "protected_ruleset": true,
       "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "Token-Max",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "heretek-context-router",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "epistemic-factory",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "agency-control-plane",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-harness",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-v2-plugin-teser",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-rea",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-searxng-plugin",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "job-bot",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "SwarmOS",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "The-Agency",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "oh-mine-pi",
-      "tier": 2,
-      "profile": "bun-biome",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "heretek-devcontainers",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "godot-opencode",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "unity.gamedev.kit",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-v2-config",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": false,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "awesome-harness",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
       "secret_exceptions": []
     },
     {
@@ -334,70 +134,7 @@
       "secret_exceptions": []
     },
     {
-      "name": "Asset-Manager",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
       "name": "bodycam-unfuck",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "cod.ai",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "jobhunter",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "MuseEngine",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "opencode-stack-bench",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "torrent-dedup",
-      "tier": 2,
-      "profile": "python-uv",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "whonix-type",
       "tier": 2,
       "profile": "python-uv",
       "actions_enabled": true,
@@ -415,43 +152,7 @@
       "secret_exceptions": []
     },
     {
-      "name": "Game-Studio",
-      "tier": 2,
-      "profile": "rust-cargo",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
-      "name": "pi-configs",
-      "tier": 2,
-      "profile": "godot-gdscript",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "Heretek-Crew",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "apache-2.0",
-      "secret_exceptions": []
-    },
-    {
       "name": "bilderberg",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "fedora-nvidia-kernel-7.4-fix",
       "tier": 2,
       "profile": "universal",
       "actions_enabled": true,
@@ -467,69 +168,9 @@
       "protected_ruleset": false,
       "license_default": "mit",
       "secret_exceptions": []
-    },
-    {
-      "name": "ompweb-docker",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": true,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "heretek-skills",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": false,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "virt-box",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": false,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "optimized-prompts",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": false,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
-    },
-    {
-      "name": "free-git",
-      "tier": 2,
-      "profile": "universal",
-      "actions_enabled": false,
-      "protected_ruleset": false,
-      "license_default": "mit",
-      "secret_exceptions": []
     }
   ],
   "forks": [
-    {
-      "name": "opencode",
-      "kind": "reference",
-      "actions_enabled": false
-    },
-    {
-      "name": "openclaude",
-      "kind": "reference",
-      "actions_enabled": false
-    },
-    {
-      "name": "rea",
-      "kind": "reference",
-      "actions_enabled": false
-    },
     {
       "name": "open-code-review",
       "kind": "reference",
@@ -549,59 +190,7 @@
       "name": "openrig",
       "kind": "active-fork",
       "actions_enabled": true
-    },
-    {
-      "name": "paperclip",
-      "kind": "active-fork",
-      "actions_enabled": true
-    },
-    {
-      "name": "gufo",
-      "kind": "active-fork",
-      "actions_enabled": true
-    },
-    {
-      "name": "Strata",
-      "kind": "active-fork",
-      "actions_enabled": true
     }
   ],
-  "archive_candidates": [
-    {
-      "name": "Heretek-Gateway",
-      "reason": "Uninitialized / no default code or workflows"
-    },
-    {
-      "name": "opengravity",
-      "reason": "Uninitialized / no default code or workflows"
-    },
-    {
-      "name": "ue5-linux-extract",
-      "reason": "Uninitialized / no default code or workflows"
-    },
-    {
-      "name": "Aera-1810",
-      "reason": "Uninitialized / no default code or workflows"
-    },
-    {
-      "name": "Redot-team",
-      "reason": "Uninitialized / no default code or workflows"
-    },
-    {
-      "name": "godot-webui",
-      "reason": "Uninitialized / Actions disabled"
-    },
-    {
-      "name": "stupid-notes",
-      "reason": "Minimal / Actions disabled"
-    },
-    {
-      "name": "Anker-Games-Launcher",
-      "reason": "Apparent duplicate of AnkerGames-Launcher (Rust)"
-    },
-    {
-      "name": "Heretek-ProxmoxVE",
-      "reason": "Apparent duplicate of ProxmoxVE"
-    }
-  ]
+  "archive_candidates": []
 }
