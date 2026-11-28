@@ -40,7 +40,7 @@ Canonical agent instructions for `Heretek-AI/.github` (the organization control 
 | Tier 1 zero-bypass PR-only rulesets | `scripts/sync-rulesets.sh` (`bypass_actors: []`) |
 | Zero-bypass `main` branch protection on `.github` | Ruleset `keep summer safe` (`bypass_actors: []`) |
 | Org secrets scoped to the active fleet | `scripts/harden-org.sh`, `scripts/audit_org.py` (`secret_hygiene`) |
-| PVR + secret-scanning validity/non-provider checks on public repos | `Heretek-AI fleet baseline`, `scripts/audit_org.py` (`repo_security`) |
+| PVR + secret-scanning push protection on public repos (validity/non-provider are plan-limited) | `Heretek-AI fleet baseline`, `scripts/audit_org.py` (`repo_security`); advisory in `hygiene_gaps` |
 | Fleet code-security baseline attachment | `scripts/harden-org.sh`, `scripts/audit_org.py` |
 | `audit_org.py --strict` fails closed on unreadable APIs | `scripts/audit_org.py` (`unavailable`) |
 | Non-blocking `OpenCodeReview` (skips `chore/sync-org-standards` PRs) | `.github/workflows/ocr-review.yml` (`continue-on-error: true`) |

@@ -63,10 +63,11 @@ sync_repo() {
 
   # 1. Core merge & sign-off defaults
   local patch_payload
+  # web_commit_signoff_required is enforced at the organization level; sending
+  # it here returns 422 because the repository value is read-only.
   patch_payload="$(jq -nc '{
     delete_branch_on_merge: true,
-    allow_update_branch: true,
-    web_commit_signoff_required: true
+    allow_update_branch: true
   }')"
 
   if [ "$dry_run" = true ]; then

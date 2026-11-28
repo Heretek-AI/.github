@@ -23,7 +23,6 @@ schema_payload="$(
       "property_name": "tier",
       "value_type": "single_select",
       "required": false,
-      "default_value": "tier-2",
       "description": "Governance tier from Heretek-AI/.github fleet-manifest.json",
       "allowed_values": ["control-plane", "tier-1", "tier-2", "fork", "archive-candidate"],
       "values_editable_by": "org_actors"
@@ -32,7 +31,6 @@ schema_payload="$(
       "property_name": "stack_profile",
       "value_type": "single_select",
       "required": false,
-      "default_value": "universal",
       "description": "Standardized Lefthook/CI stack profile from fleet-manifest.json",
       "allowed_values": ["bun-biome", "python-uv", "node-zerodep", "rust-cargo", "cpp-cmake", "godot-gdscript", "universal", "none"],
       "values_editable_by": "org_actors"
@@ -41,7 +39,6 @@ schema_payload="$(
       "property_name": "security_critical",
       "value_type": "true_false",
       "required": false,
-      "default_value": "false",
       "description": "True for control-plane and Tier 1 zero-bypass repositories",
       "values_editable_by": "org_actors"
     },
@@ -49,7 +46,6 @@ schema_payload="$(
       "property_name": "managed_by",
       "value_type": "single_select",
       "required": false,
-      "default_value": "fleet-sync",
       "description": "How repository standards are maintained",
       "allowed_values": ["fleet-sync", "manual"],
       "values_editable_by": "org_actors"
