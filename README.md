@@ -65,10 +65,10 @@ Conforms to the [Agent Skills Open Specification](https://agentskills.io/specifi
 - **Actions allowlist:** `allowed_actions=selected` with `sha_pinning_required=true`; `org-actions-allowlist.json` allows GitHub-owned and verified-creator actions plus an explicit pattern list, applied by `scripts/harden-org.sh` and drift-checked by `scripts/audit_org.py`.
 - **PR-only rulesets:** Tier 1 repositories and `.github` carry zero-bypass (`bypass_actors: []`), PR-required `main` rulesets plus protected release tags; `scripts/sync-rulesets.sh` reconciles drift in existing rulesets.
 - **Fork-PR approval:** `all_external_contributors`, with private-repo fork workflow runs requiring approval and no secrets/variables or write tokens sent to fork PRs.
-- **Secret scanning and PVR:** Push protection, non-provider patterns, validity checks, and private vulnerability reporting are enabled on active public repositories through the fleet code-security configuration.
+- **Secret scanning and PVR:** Push protection and private vulnerability reporting are enabled on active public repositories through the fleet code-security configuration. Non-provider patterns and validity checks require GitHub Secret Protection and remain plan-limited.
 - **Immutable releases:** Enabled on Tier 1 repositories and `.github` by `scripts/sync-repo-settings.sh`.
 - **Custom properties:** `tier`, `stack_profile`, `security_critical`, and `managed_by` are defined from `fleet-manifest.json` by `scripts/sync-custom-properties.sh`.
-- **Runner scoping:** The org self-hosted runner policy and the Default runner group are limited to the `self_hosted_runner: true` opt-ins (`GDevelop-Unlocked`, `TAT-2`, `homebrew-tap`, `game-engine`); `resolve-runner.yml` remains the only supported entry point.
+- **Runner scoping:** The org self-hosted runner policy is limited to the `self_hosted_runner: true` opt-ins (`GDevelop-Unlocked`, `TAT-2`, `homebrew-tap`, `game-engine`); the Default runner group PATCH is plan-limited. `resolve-runner.yml` remains the only supported entry point.
 - **Fleet code-security baseline:** `Heretek-AI fleet baseline` attaches secret scanning, PVR, and Dependabot to active public repos plus `.github`; CodeQL default setup is deliberately `not_set` so advanced CodeQL workflows are not overridden.
 
 ## 6. Standardized Organization Secrets & Variables

@@ -733,20 +733,31 @@ def check_repo(
                     "secret-scanning posture unknown"
                 )
             else:
+                push_item = security.get("secret_scanning_push_protection")
+                push_status = (
+                    push_item.get("status") if isinstance(push_item, dict) else None
+                )
+                if push_status != "enabled":
+                    info["repo_security"].append(
+                        f"`{name}` `secret_scanning_push_protection` is "
+                        f"`{push_status or 'unset'}` (expected `enabled`)"
+                    )
+                disabled_checks = []
                 for key in (
                     "secret_scanning_non_provider_patterns",
                     "secret_scanning_validity_checks",
-                    "secret_scanning_push_protection",
                 ):
                     item = security.get(key)
                     status_value = (
                         item.get("status") if isinstance(item, dict) else None
                     )
                     if status_value != "enabled":
-                        info["repo_security"].append(
-                            f"`{name}` `{key}` is `{status_value or 'unset'}` "
-                            "(expected `enabled`)"
-                        )
+                        disabled_checks.append(key)
+                if disabled_checks:
+                    info["hygiene"].append(
+                        f"`{name}` is missing {', '.join(disabled_checks)} "
+                        "(Free-plan limitation; Secret Protection required)"
+                    )
 
     entry_is_tier1 = bool(entry and entry.get("protected_ruleset"))
     if not is_tracked_fork and (name == ".github" or entry_is_tier1):
@@ -1199,7 +1210,22 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
                 f"`{', '.join(missing_claims)}`"
             )
 
-    # 6. Runner group visibility
+    # 6. Self-hosted runner policy and runner group visibility
+    self_hosted = gh_api_checked(
+        f"/orgs/{org}/actions/permissions/self-hosted-runners",
+        "self-hosted runner permissions",
+        findings,
+    )
+    self_hosted_selected = bool(
+        self_hosted is not None
+        and self_hosted.get("enabled_repositories") == "selected"
+    )
+    if self_hosted is not None and not self_hosted_selected:
+        findings["p0_security"].append(
+            "self-hosted runners `enabled_repositories` is "
+            f"`{self_hosted.get('enabled_repositories')}` (expected `selected`)"
+        )
+
     runner_groups = gh_api_checked(
         f"/orgs/{org}/actions/runner-groups",
         "runner groups",
@@ -1220,25 +1246,17 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
                 if not isinstance(group, dict):
                     continue
                 if group.get("visibility") == "all":
-                    findings["p0_security"].append(
-                        f"runner group `{group.get('name')}` is visible to `all` "
-                        "repositories (expected `selected`)"
-                    )
-
-    # 7. Self-hosted runner repository scope
-    self_hosted = gh_api_checked(
-        f"/orgs/{org}/actions/permissions/self-hosted-runners",
-        "self-hosted runner permissions",
-        findings,
-    )
-    if (
-        self_hosted is not None
-        and self_hosted.get("enabled_repositories") != "selected"
-    ):
-        findings["p0_security"].append(
-            "self-hosted runners `enabled_repositories` is "
-            f"`{self_hosted.get('enabled_repositories')}` (expected `selected`)"
-        )
+                    if self_hosted_selected:
+                        findings["hygiene_gaps"].append(
+                            f"runner group `{group.get('name')}` visibility is `all`; "
+                            "the org self-hosted runner policy is `selected` and the "
+                            "group PATCH is plan-limited"
+                        )
+                    else:
+                        findings["p0_security"].append(
+                            f"runner group `{group.get('name')}` is visible to `all` "
+                            "repositories (expected `selected`)"
+                        )
 
     # 8. Fork-PR workflows for private repositories
     fork_private = gh_api_checked(
@@ -1248,8 +1266,10 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
     )
     if fork_private is not None:
         if fork_private.get("require_approval_for_fork_pr_workflows") is not True:
-            findings["p0_security"].append(
-                "`require_approval_for_fork_pr_workflows` is not `true`"
+            findings["hygiene_gaps"].append(
+                "`require_approval_for_fork_pr_workflows` is not `true`; the API "
+                "did not apply the setting on this plan — set it in Org Settings -> "
+                "Actions -> General"
             )
         if fork_private.get("send_secrets_and_variables") is not False:
             findings["p0_security"].append(
@@ -1393,6 +1413,21 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
             findings["supply_chain"].extend(res["supply_chain"])
             findings["repo_security"].extend(res["repo_security"])
             findings["custom_properties"].extend(res["custom_properties"])
+
+    plan_limited = [
+        item for item in findings["hygiene_gaps"] if "Free-plan limitation" in item
+    ]
+    if plan_limited:
+        findings["hygiene_gaps"] = [
+            item
+            for item in findings["hygiene_gaps"]
+            if "Free-plan limitation" not in item
+        ]
+        findings["hygiene_gaps"].append(
+            "secret-scanning non-provider patterns and validity checks are "
+            f"unavailable on {len(plan_limited)} public repositories "
+            "(Free-plan limitation; Secret Protection required)"
+        )
 
     for key in findings:
         findings[key] = list(dict.fromkeys(findings[key]))

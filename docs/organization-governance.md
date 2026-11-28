@@ -13,7 +13,7 @@ Enforced via `scripts/harden-org.sh` against `/orgs/Heretek-AI`, `/orgs/Heretek-
 | `allowed_actions` | `selected` | Only allowlisted actions run; the list is applied from `org-actions-allowlist.json` |
 | `sha_pinning_required` | `true` | Requires full-length commit SHA pins for all third-party GitHub Actions |
 | `fork-pr-contributor-approval` | `all_external_contributors` | Every external fork PR needs maintainer approval before workflows run |
-| `require_approval_for_fork_pr_workflows` | `true` | Private-repository fork PR workflows wait for approval, with no secrets/variables or write tokens sent |
+| `require_approval_for_fork_pr_workflows` | `true` (UI-only; API no-op on Free) | Private-repository fork PR workflows wait for approval, with no secrets/variables or write tokens sent |
 | OIDC `sub` claim | `repo`, `context`, `job_workflow_ref` | Cloud trust policies can pin the repository and calling workflow |
 | `default_repository_permission` | `read` | Organization members default to read access unless granted team/repo roles |
 | `members_can_create_repositories` | `false` | Restricts new repository creation to organization owners |
@@ -32,11 +32,12 @@ Enforced via `scripts/harden-org.sh` against `/orgs/Heretek-AI`, `/orgs/Heretek-
 
 `scripts/harden-org.sh` creates or updates the organization configuration `Heretek-AI fleet baseline` and attaches it to every active public managed repository plus `.github`:
 
-- Secret scanning, push protection, non-provider patterns, validity checks, and extended metadata: `enabled`
+- Secret scanning, push protection, and extended metadata: `enabled`
+- Non-provider patterns and validity checks: configured `enabled`, but remain disabled on this plan because they require GitHub Secret Protection
 - Private vulnerability reporting: `enabled`
 - Dependency graph, Dependabot alerts, and Dependabot security updates: `enabled`
 - `code_scanning_default_setup`: `not_set` (deliberate — avoids conflicting with repositories running advanced CodeQL workflows)
-- `advanced_security`: `disabled`; `enforcement`: `unenforced`
+- `advanced_security`: `enabled` (the API requires this whenever a GHAS feature is enabled); `enforcement`: `unenforced`
 
 The legacy organization configuration `250992` (CodeQL default setup enabled) is left untouched; the fleet baseline supersedes it for active public repositories.
 
@@ -100,7 +101,7 @@ All active repositories are classified in `fleet-manifest.json` (`schema_version
 - **Organization hardening:** default permissions, repository creation, `deploy_keys_enabled_for_repositories`, sign-off, read-only workflow tokens, `allowed_actions=selected` against `org-actions-allowlist.json`, `sha_pinning_required`, fork-PR approval, private-fork workflow approval, OIDC `sub` claims, runner-group visibility, self-hosted runner policy, and unapproved per-repo secrets/variables.
 - **Third-party apps:** installs with `administration: write`, or `workflows`/`repository_hooks: write` while installed on all repositories.
 - **Secret hygiene:** org secrets at `all`, secrets scoped to archived or untracked repositories, and the stale `OPENCODE_API_KEY`.
-- **Per-repository security:** private vulnerability reporting, secret scanning with push protection, non-provider patterns and validity checks, immutable releases, and the fleet code-security configuration attachment.
+- **Per-repository security:** private vulnerability reporting, secret scanning with push protection, immutable releases, and the fleet code-security configuration attachment. Non-provider patterns and validity checks are reported as advisory because they require Secret Protection.
 - **Ruleset compliance:** zero-bypass PR-only default-branch rulesets, release-tag rulesets, and the hygiene check matching whether the repository runs the shared workflow.
 - **Unpinned actions:** any `uses:` ref that is not a full 40-char commit SHA.
 - **Custom properties:** `tier`, `stack_profile`, `security_critical`, and `managed_by` against `fleet-manifest.json`.
@@ -110,7 +111,7 @@ Manifest drift, license/description gaps, and stalled sync PRs are reported as a
 
 ## 6. Optional Self-Hosted CI Runner (`stx-halo`)
 
-Heavy CI workloads can opt into the Proxmox VE self-hosted runner (`stx-halo`, `rocm`, `gfx1151`) via [`.github/workflows/resolve-runner.yml`](../.github/workflows/resolve-runner.yml), which enforces a fork-PR trust gate and automatically falls back to `ubuntu-latest` when `stx-halo` is offline. The org self-hosted runner policy is `selected`, and the Default runner group is scoped via `fleet-manifest.json` (`self_hosted_runner: true`) to `GDevelop-Unlocked`, `TAT-2`, `homebrew-tap`, and `game-engine`. See [`docs/self-hosted-runner-proxmox.md`](self-hosted-runner-proxmox.md) for host hardening and setup.
+Heavy CI workloads can opt into the Proxmox VE self-hosted runner (`stx-halo`, `rocm`, `gfx1151`) via [`.github/workflows/resolve-runner.yml`](../.github/workflows/resolve-runner.yml), which enforces a fork-PR trust gate and automatically falls back to `ubuntu-latest` when `stx-halo` is offline. The org self-hosted runner policy is `selected`, limited by `fleet-manifest.json` (`self_hosted_runner: true`) to `GDevelop-Unlocked`, `TAT-2`, `homebrew-tap`, and `game-engine`. The Default runner group PATCH is plan-limited, so its visibility may remain `all`; the org policy is the effective control. See [`docs/self-hosted-runner-proxmox.md`](self-hosted-runner-proxmox.md) for host hardening and setup.
 
 ## 7. UI-Only Organization Hardening Checklist
 
@@ -122,5 +123,8 @@ These controls have no supported API in the current plan and must be reviewed in
 - **PAT policy:** Require fine-grained PAT approval, cap maximum lifetime at 90 days, restrict classic PATs, and migrate `ProxmoxVE`'s `PAT_STANDALONE` / `PAT_WORKFLOW` to approved fine-grained tokens.
 - **Verified domain:** Verify the organization domain so profile badges and email restrictions can be enforced.
 - **Actions policy review:** Re-check `allowed_actions=selected` and the allowlist whenever a workflow adds a new publisher.
+- **Private-fork workflow approval:** The API PUT returns 204 but does not change the setting on Free; enable *Require approval for fork pull request workflows* in **Org Settings -> Actions -> General**.
+- **Runner group visibility:** The Default runner group PATCH is plan-limited; the org self-hosted runner policy is `selected`. Set group-level repository access in **Org Settings -> Actions -> Runner groups** if required.
+- **Secret Protection:** Non-provider patterns and validity checks require GitHub Secret Protection; upgrade if those signals are required.
 - **Copilot and Codespaces least privilege:** Limit seat assignment and repository access to active maintainers.
 - **Secret visibility switch:** Perform the one-time `all` -> `selected` re-scope described in §2 so `harden-org.sh` can sync the exact repository list.

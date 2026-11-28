@@ -115,7 +115,12 @@ else
   gh api -X PUT "/orgs/$org/actions/permissions/fork-pr-workflows-private-repos" \
     -H "Accept: application/vnd.github+json" \
     --input - <<<"$fork_private_payload" >/dev/null
-  echo "Updated workflow permissions (read-only, no PR approval), fork-PR approval (all_external_contributors), and private-fork workflow approval."
+  fork_private_after="$(gh api "/orgs/$org/actions/permissions/fork-pr-workflows-private-repos" --jq '.require_approval_for_fork_pr_workflows' 2>/dev/null || echo unknown)"
+  if [ "$fork_private_after" = "true" ]; then
+    echo "Updated workflow permissions (read-only, no PR approval), fork-PR approval (all_external_contributors), and private-fork workflow approval."
+  else
+    echo "::warning::Private-fork workflow approval did not take effect via API (Free-plan/read-only); set it in Org Settings -> Actions -> General."
+  fi
 fi
 
 # 4. Enforce Actions OIDC custom subject claim template
@@ -141,7 +146,7 @@ ensure_fleet_code_security_config() {
   cfg_payload="$(jq -nc --arg name "$cfg_name" --arg description "$cfg_description" '{
     name: $name,
     description: $description,
-    advanced_security: "disabled",
+    advanced_security: "enabled",
     dependency_graph: "enabled",
     dependabot_alerts: "enabled",
     dependabot_security_updates: "enabled",
