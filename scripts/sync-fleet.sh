@@ -197,6 +197,12 @@ while IFS=$'\t' read -r repo_name tier profile actions_enabled; do
     fi
   done
 
+  # Repositories commonly ignore .agents/ (local agent state). Fleet skills are
+  # tracked source, so add a later negation when the ignore rule is present.
+  if [ -f "$clone_dir/.gitignore" ] && grep -qxF '.agents/' "$clone_dir/.gitignore"; then
+    printf '\n# Fleet-managed Agent Skills are tracked\n!.agents/\n' >>"$clone_dir/.gitignore"
+  fi
+
   # 6. For workflow-enabled repos, sync .github/actionlint.yaml, bootstrap hygiene/ocr if missing, and bump SHAs
   if [ "$actions_enabled" = "true" ]; then
     mkdir -p "$clone_dir/.github/workflows"
@@ -245,6 +251,9 @@ while IFS=$'\t' read -r repo_name tier profile actions_enabled; do
   git -C "$clone_dir" config user.name "heretek-fleet-sync[bot]"
   git -C "$clone_dir" config user.email "heretek-fleet-sync[bot]@users.noreply.github.com"
   git -C "$clone_dir" add -A
+  # .agents/ is often ignored; force-add the synced skills and harness links so
+  # the PR actually carries them.
+  git -C "$clone_dir" add -f .agents .opencode/skills .claude/skills .github/skills 2>/dev/null || true
   git -C "$clone_dir" commit --signoff -m "chore(org-sync): propagate Heretek-AI/.github@$short_sha standards"
   remote_sha="$(git -C "$clone_dir" ls-remote --heads origin "$sync_branch" | awk '{print $1}')"
   if [ -n "$remote_sha" ]; then
@@ -258,7 +267,8 @@ while IFS=$'\t' read -r repo_name tier profile actions_enabled; do
   fi
 
   pr_title="chore(org-sync): sync Heretek-AI/.github@$short_sha standards (tier-$tier / $profile)"
-  pr_body="$(cat <<EOF
+  pr_body="$(
+    cat <<EOF
 ## What and why
 
 Automated organization standardization sync from \`Heretek-AI/.github@${source_sha}\` (tier: \`${tier}\`, profile: \`${profile}\`).
@@ -282,7 +292,7 @@ Validated by: Heretek-AI/.github CI (hygiene, zizmor, validate-skills.sh, shellc
 
 Tracked by \`Heretek-AI/.github\` organization standardization.
 EOF
-)"
+  )"
 
   existing_pr="$(gh pr list --repo "$full_repo" --head "$sync_branch" --base "$default_branch" --json number --jq '.[0].number // empty')"
   if [ -n "$existing_pr" ]; then
