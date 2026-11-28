@@ -15,7 +15,8 @@ fi
 
 echo "=== $org Custom Properties Sync (dry_run=$dry_run) ==="
 
-schema_payload="$(cat <<'EOF'
+schema_payload="$(
+  cat <<'EOF'
 {
   "properties": [
     {
