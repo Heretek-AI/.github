@@ -120,7 +120,8 @@ def gh_api(path: str) -> Any:
     """Legacy helper: returns parsed JSON or None on failure."""
     if SAFE_API_PATH_RE.fullmatch(path) is None:
         return None
-    proc = subprocess.run(  # NOSONAR: fixed argv, no shell; path validated above
+    # Fixed argv, no shell; the path is validated above.
+    proc = subprocess.run(  # NOSONAR
         ["gh", "api", path], capture_output=True, text=True, check=False
     )
     if proc.returncode != 0:
@@ -154,7 +155,8 @@ def gh_api_status(path: str) -> tuple[Any, int]:
     """
     if SAFE_API_PATH_RE.fullmatch(path) is None:
         return None, 0
-    proc = subprocess.run(  # NOSONAR: fixed argv, no shell; path validated above
+    # Fixed argv, no shell; the path is validated above.
+    proc = subprocess.run(  # NOSONAR
         ["gh", "api", path], capture_output=True, text=True, check=False
     )
     status = 0
@@ -842,25 +844,18 @@ def check_org_secrets(
             continue
 
         visibility = meta.get("visibility")
-        vis = (
-            "all"
-            if visibility == "all"
-            else "selected"
-            if visibility == "selected"
-            else "other"
-        )
 
         if name == "OPENCODE_API_KEY":
             findings["secret_hygiene"].append(
                 "org secret `OPENCODE_API_KEY` still exists (stale; remove it)"
             )
 
-        if vis == "all":
+        if visibility == "all":
             findings["secret_hygiene"].append(
                 f"org secret `{name}` has visibility `all` "
                 "(expected selected repositories)"
             )
-        elif vis == "selected":
+        elif visibility == "selected":
             repo_payload = gh_api_checked(
                 f"/orgs/{org}/actions/secrets/{name}/repositories?per_page=100",
                 f"repositories for org secret `{name}`",
@@ -898,6 +893,11 @@ def check_org_secrets(
                     f"org secret `{name}` is scoped to archived or untracked "
                     "repositories (inspect in Org Settings)"
                 )
+        else:
+            findings["secret_hygiene"].append(
+                f"org secret `{name}` has an unexpected visibility "
+                "(expected `all` or `selected`)"
+            )
 
 
 def check_installations(org: str, findings: dict[str, list[str]]) -> None:
@@ -1262,14 +1262,9 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
 
     # 9. ORG_SYNC_TOKEN scoping (existing baseline)
     sync_meta = gh_api(f"/orgs/{org}/actions/secrets/ORG_SYNC_TOKEN")
-    sync_vis = (
-        "selected"
-        if sync_meta and sync_meta.get("visibility") == "selected"
-        else "other"
-    )
-    if sync_meta and sync_vis != "selected":
+    if sync_meta and sync_meta.get("visibility") != "selected":
         findings["p0_security"].append(
-            f"`ORG_SYNC_TOKEN` visibility is `{sync_vis}` "
+            "`ORG_SYNC_TOKEN` visibility is not `selected` "
             f"(expected `selected` -> `{org}/.github` only)"
         )
 
@@ -1287,7 +1282,8 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
             "tier1_repo_count": tier1_count,
             "findings": findings,
         }
-    proc = subprocess.run(  # NOSONAR: fixed argv, no shell; org validated above
+    # Fixed argv, no shell; the org is validated above.
+    proc = subprocess.run(  # NOSONAR
         [
             "gh",
             "repo",
