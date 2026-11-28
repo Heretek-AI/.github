@@ -23,6 +23,7 @@
     "ilammy/msvc-dev-cmd@*",
     "jakoch/install-vulkan-sdk-action@*",
     "leanprover/lean-action@*",
+    "mozilla-actions/sccache-action@*",
     "ossf/scorecard-action@*",
     "oven-sh/setup-bun@*",
     "peter-evans/dockerhub-description@*",
