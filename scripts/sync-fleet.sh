@@ -258,7 +258,8 @@ while IFS=$'\t' read -r repo_name tier profile actions_enabled; do
   fi
 
   pr_title="chore(org-sync): sync Heretek-AI/.github@$short_sha standards (tier-$tier / $profile)"
-  pr_body="$(cat <<EOF
+  pr_body="$(
+    cat <<EOF
 ## What and why
 
 Automated organization standardization sync from \`Heretek-AI/.github@${source_sha}\` (tier: \`${tier}\`, profile: \`${profile}\`).
@@ -282,7 +283,7 @@ Validated by: Heretek-AI/.github CI (hygiene, zizmor, validate-skills.sh, shellc
 
 Tracked by \`Heretek-AI/.github\` organization standardization.
 EOF
-)"
+  )"
 
   existing_pr="$(gh pr list --repo "$full_repo" --head "$sync_branch" --base "$default_branch" --json number --jq '.[0].number // empty')"
   if [ -n "$existing_pr" ]; then
