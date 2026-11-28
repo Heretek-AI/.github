@@ -44,12 +44,24 @@ jobs:
               and (.profile | type == "string")
               and (.actions_enabled | type == "boolean")
               and (.protected_ruleset | type == "boolean")
+              and (.self_hosted_runner | type == "boolean")
+              and ((.self_hosted_runner == false) or (.actions_enabled == true))
             )
           ' fleet-manifest.json
           # Ensure every referenced lefthook template exists on disk
           while IFS= read -r tpl; do
             test -f "$tpl"
           done < <(jq -r '.profiles[].lefthook_template' fleet-manifest.json)
+
+      - name: Validate org-actions-allowlist.json
+        run: |
+          jq -e '
+            .schema_version == 1
+            and (.github_owned_allowed | type == "boolean")
+            and (.verified_allowed | type == "boolean")
+            and (.patterns_allowed | type == "array")
+            and all(.patterns_allowed[]; type == "string")
+          ' org-actions-allowlist.json
 
       - name: Validate JSON templates
         run: |

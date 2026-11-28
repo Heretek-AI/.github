@@ -19,6 +19,7 @@ command output, a file and line. State what was not run.
   - `hygiene-and-workflow-audit`: machine-local path scan, `actionlint`, `zizmor`, and `SKILL.md` validation
   - `cross-repo-contract-check`: protocol and fixture verification across repositories
   - `adversarial-claim-check`: disposable worktree verification and invariant sabotage testing
+  - `security-review`: structured threat-model-first security review
 - Run `lefthook install` after cloning and `lefthook run pre-commit` before committing.
 
 ## Organization Standards (`Heretek-AI/.github`)

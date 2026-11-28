@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Propagate standardized Agent Skills, Lefthook v2 configs, .editorconfig,
-# starter hygiene/OCR workflows, workflow SHA pins, and labels from
+# starter hygiene/OCR workflows, workflow/action SHA pins, and labels from
 # Heretek-AI/.github to target repositories via idempotent DCO-signed PRs.
 #
 # Usage:
@@ -40,6 +40,88 @@ source_sha="$(git -C "$root" rev-parse HEAD)"
 short_sha="$(git -C "$root" rev-parse --short HEAD)"
 work_tmp="$(mktemp -d -t heretek-fleet-sync-XXXXXX)"
 trap 'rm -rf "$work_tmp"' EXIT
+
+# Pin third-party `uses:` refs to full-length commit SHAs (org policy:
+# sha_pinning_required). Rewrites every workflow file in the clone and prints
+# the number of refs pinned to stdout; unresolved refs warn on stderr.
+pin_workflow_actions() {
+  local clone_dir="$1"
+  local wf line re prefix owner_repo path ref suffix quote key sha out tmp pinned
+  local -A resolved=()
+  local -A warned=()
+
+  re="^([[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*[\"']?)([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(/[^@[:space:]\"']+)?@([^[:space:]\"'#]+)([\"']?[[:space:]]*(#.*)?)\$"
+
+  pinned=0
+  for wf in "$clone_dir"/.github/workflows/*.yml "$clone_dir"/.github/workflows/*.yaml; do
+    [ -f "$wf" ] || continue
+    tmp="$(mktemp "${TMPDIR:-/tmp}/pin-workflow-actions-XXXXXX")"
+    while IFS= read -r line || [ -n "$line" ]; do
+      if [[ ! "$line" =~ $re ]]; then
+        printf '%s\n' "$line" >>"$tmp"
+        continue
+      fi
+
+      prefix="${BASH_REMATCH[1]}"
+      owner_repo="${BASH_REMATCH[3]}"
+      path="${BASH_REMATCH[4]}"
+      ref="${BASH_REMATCH[5]}"
+      suffix="${BASH_REMATCH[6]}"
+      quote=""
+      case "$suffix" in
+        \"* | \'*) quote="${suffix:0:1}" ;;
+      esac
+
+      # Skip existing full-SHA pins, local/composite/container targets, and
+      # reusable workflows owned by this repository (rewritten above).
+      if [[ "$ref" =~ ^[0-9a-f]{40}$ ]] ||
+        [[ "$owner_repo" == ./* ]] ||
+        [[ "$owner_repo" == \$/* ]] ||
+        [[ "$owner_repo" == docker://* ]] ||
+        [[ "$owner_repo" == "Heretek-AI/.github" ]]; then
+        printf '%s\n' "$line" >>"$tmp"
+        continue
+      fi
+
+      key="$owner_repo@$ref"
+      if [ -z "${resolved[$key]:-}" ] && [ -z "${warned[$key]:-}" ]; then
+        sha=""
+        if out="$(timeout 30 git ls-remote "https://github.com/$owner_repo" \
+          "refs/tags/$ref^{}" "refs/tags/$ref" "refs/heads/$ref" 2>/dev/null)"; then
+          # Prefer the peeled tag commit, then the tag, then the branch.
+          sha="$(printf '%s\n' "$out" | awk -v want="refs/tags/$ref^{}" '$2 == want { print $1; exit }')"
+          if [ -z "$sha" ]; then
+            sha="$(printf '%s\n' "$out" | awk -v want="refs/tags/$ref" '$2 == want { print $1; exit }')"
+          fi
+          if [ -z "$sha" ]; then
+            sha="$(printf '%s\n' "$out" | awk -v want="refs/heads/$ref" '$2 == want { print $1; exit }')"
+          fi
+        fi
+        if [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+          resolved["$key"]="$sha"
+        else
+          warned["$key"]=1
+          echo "::warning::Could not resolve $owner_repo@$ref; leaving unpinned" >&2
+        fi
+      fi
+
+      sha="${resolved[$key]:-}"
+      if [ -z "$sha" ]; then
+        printf '%s\n' "$line" >>"$tmp"
+        continue
+      fi
+      printf '%s\n' "${prefix}${owner_repo}${path}@${sha}${quote} # ${ref}" >>"$tmp"
+      pinned=$((pinned + 1))
+    done <"$wf"
+
+    if ! cmp -s "$tmp" "$wf"; then
+      cat "$tmp" >"$wf"
+    fi
+    rm -f "$tmp"
+  done
+
+  echo "$pinned"
+}
 
 if [ "$dry_run" = false ]; then
   gh auth setup-git
@@ -137,6 +219,13 @@ while IFS=$'\t' read -r repo_name tier profile actions_enabled; do
         "s|(Heretek-AI/\.github/\.github/workflows/[A-Za-z0-9_.-]+\.ya?ml)@[0-9a-f]{40}([[:space:]]*#.*)?|\1@${source_sha} # main|g" \
         "$wf"
     done
+
+    # Pin third-party action/workflow refs to full commit SHAs (the org
+    # enforces sha_pinning_required: true; tag refs fail workflow startup).
+    pinned_count="$(pin_workflow_actions "$clone_dir")"
+    if [ "$pinned_count" -gt 0 ]; then
+      echo "$repo_name: pinned $pinned_count action ref(s)"
+    fi
   fi
 
   # 7. Check if anything changed
@@ -178,6 +267,7 @@ Automated organization standardization sync from \`Heretek-AI/.github@${source_s
 - Seeds \`.editorconfig\` if absent
 - Syncs shared Agent Skills under \`.agents/skills/\` (with \`.opencode/skills\`, \`.claude/skills\`, and \`.github/skills\` discovery symlinks)
 - Ensures baseline \`hygiene.yml\` / \`ocr.yml\` callers and bumps reusable workflow pins (\`Heretek-AI/.github/.github/workflows/*\`) to \`${source_sha}\`
+- Pins third-party action and reusable-workflow \`uses:\` refs to full-length commit SHAs (org \`sha_pinning_required\`)
 
 ## Evidence
 
