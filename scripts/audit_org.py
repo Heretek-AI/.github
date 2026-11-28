@@ -94,6 +94,11 @@ STRICT_CATEGORIES = (
 USES_RE = re.compile(r"^\s*(?:-\s*)?uses:\s*[\"']?([^\s\"'#]+)", re.MULTILINE)
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 HTTP_STATUS_RE = re.compile(r"HTTP (\d{3})")
+# API paths are built from manifest/API-supplied identifiers. Validate them
+# before they reach a subprocess argument, and keep the report limited to
+# names/visibility/counts (secret values are never fetched or logged).
+SAFE_API_PATH_RE = re.compile(r"^/[A-Za-z0-9._~%/?&=+:#-]*$")
+SAFE_ORG_RE = re.compile(r"^[A-Za-z0-9-]+$")
 
 
 def empty_findings() -> dict[str, list[str]]:
@@ -102,6 +107,8 @@ def empty_findings() -> dict[str, list[str]]:
 
 def gh_api(path: str) -> Any:
     """Legacy helper: returns parsed JSON or None on failure."""
+    if SAFE_API_PATH_RE.fullmatch(path) is None:
+        return None
     proc = subprocess.run(
         ["gh", "api", path], capture_output=True, text=True, check=False
     )
@@ -134,6 +141,8 @@ def gh_api_status(path: str) -> tuple[Any, int]:
     `gh api` exits non-zero for 4xx/5xx and may print the error body to stdout
     or the status only to stderr. Both shapes are normalized here.
     """
+    if SAFE_API_PATH_RE.fullmatch(path) is None:
+        return None, 0
     proc = subprocess.run(
         ["gh", "api", path], capture_output=True, text=True, check=False
     )
@@ -623,29 +632,43 @@ def check_repo(
         )
 
     entry = managed.get(name)
-    allowed_secrets = set(entry.get("secret_exceptions", [])) if entry else set()
+    allowed_exceptions = set(entry.get("secret_exceptions", [])) if entry else set()
 
-    secs_data = gh_api_checked(
+    repo_meta = gh_api_checked(
         f"/repos/{org}/{name}/actions/secrets",
         f"repository secrets for `{name}`",
         findings,
     )
-    vars_data = gh_api_checked(
+    repo_var_meta = gh_api_checked(
         f"/repos/{org}/{name}/actions/variables",
         f"repository variables for `{name}`",
         findings,
     )
-    secs = (secs_data or {}).get("secrets", []) if isinstance(secs_data, dict) else []
-    vrs = (vars_data or {}).get("variables", []) if isinstance(vars_data, dict) else []
-    extra_secs = [s["name"] for s in secs if s["name"] not in allowed_secrets]
-    extra_vars = [v["name"] for v in vrs if v["name"] not in allowed_secrets]
-    if extra_secs:
+    repo_entries = (
+        (repo_meta or {}).get("secrets", []) if isinstance(repo_meta, dict) else []
+    )
+    var_entries = (
+        (repo_var_meta or {}).get("variables", [])
+        if isinstance(repo_var_meta, dict)
+        else []
+    )
+    unexpected_entries = [
+        item["name"] for item in repo_entries if item["name"] not in allowed_exceptions
+    ]
+    unexpected_vars = [
+        var_item["name"]
+        for var_item in var_entries
+        if var_item["name"] not in allowed_exceptions
+    ]
+    if unexpected_entries:
         info["p0"].append(
-            f"`{name}` has unapproved per-repo secrets: `{', '.join(extra_secs)}`"
+            f"`{name}` has unapproved per-repo secrets: "
+            f"`{', '.join(unexpected_entries)}`"
         )
-    if extra_vars:
+    if unexpected_vars:
         info["p0"].append(
-            f"`{name}` has unapproved per-repo variables: `{', '.join(extra_vars)}`"
+            f"`{name}` has unapproved per-repo variables: "
+            f"`{', '.join(unexpected_vars)}`"
         )
 
     # Repository details feed only the strict repo-security checks below.
@@ -769,29 +792,29 @@ def check_org_secrets(
     forks: dict[str, dict[str, Any]],
     archived_names: set[str],
 ) -> None:
-    data = gh_api_checked(
+    payload = gh_api_checked(
         f"/orgs/{org}/actions/secrets?per_page=100",
         "organization Actions secrets",
         findings,
     )
-    if data is None:
+    if payload is None:
         return
 
-    secrets = data.get("secrets") if isinstance(data, dict) else data
-    if not isinstance(secrets, list):
+    entries = payload.get("secrets") if isinstance(payload, dict) else payload
+    if not isinstance(entries, list):
         findings["unavailable"].append(
             "organization Actions secrets returned an unexpected payload; posture unknown"
         )
         return
 
     tracked = set(managed) | set(forks) | {".github"}
-    for secret in secrets:
-        if not isinstance(secret, dict):
+    for entry in entries:
+        if not isinstance(entry, dict):
             continue
-        name = secret.get("name")
+        name = entry.get("name")
         if not name:
             continue
-        visibility = secret.get("visibility")
+        visibility = entry.get("visibility")
 
         if name == "OPENCODE_API_KEY":
             findings["secret_hygiene"].append(
@@ -803,25 +826,25 @@ def check_org_secrets(
                 f"org secret `{name}` has visibility `all` (expected selected repositories)"
             )
         elif visibility == "selected":
-            repos_data = gh_api_checked(
+            repo_payload = gh_api_checked(
                 f"/orgs/{org}/actions/secrets/{name}/repositories?per_page=100",
                 f"repositories for org secret `{name}`",
                 findings,
             )
-            if repos_data is None:
+            if repo_payload is None:
                 continue
-            repos = (
-                repos_data.get("repositories")
-                if isinstance(repos_data, dict)
-                else repos_data
+            repo_entries = (
+                repo_payload.get("repositories")
+                if isinstance(repo_payload, dict)
+                else repo_payload
             )
-            if not isinstance(repos, list):
+            if not isinstance(repo_entries, list):
                 findings["unavailable"].append(
                     f"repositories for org secret `{name}` returned an unexpected "
                     "payload; posture unknown"
                 )
                 continue
-            for repo in repos:
+            for repo in repo_entries:
                 if not isinstance(repo, dict):
                     continue
                 repo_name = repo.get("name")
@@ -1203,14 +1226,27 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
             )
 
     # 9. ORG_SYNC_TOKEN scoping (existing baseline)
-    sync_secret = gh_api(f"/orgs/{org}/actions/secrets/ORG_SYNC_TOKEN")
-    if sync_secret and sync_secret.get("visibility") != "selected":
+    sync_meta = gh_api(f"/orgs/{org}/actions/secrets/ORG_SYNC_TOKEN")
+    if sync_meta and sync_meta.get("visibility") != "selected":
         findings["p0_security"].append(
-            f"`ORG_SYNC_TOKEN` visibility is `{sync_secret.get('visibility')}` "
+            f"`ORG_SYNC_TOKEN` visibility is `{sync_meta.get('visibility')}` "
             f"(expected `selected` -> `{org}/.github` only)"
         )
 
     # 10. Repository inventory
+    if SAFE_ORG_RE.fullmatch(org) is None:
+        findings["unavailable"].append(
+            f"organization `{org}` failed validation; repository inventory unknown"
+        )
+        return {
+            "organization": org,
+            "generated_at": now.isoformat(),
+            "active_repo_count": 0,
+            "managed_repo_count": len(managed),
+            "tracked_fork_count": len(forks),
+            "tier1_repo_count": tier1_count,
+            "findings": findings,
+        }
     proc = subprocess.run(
         [
             "gh",
