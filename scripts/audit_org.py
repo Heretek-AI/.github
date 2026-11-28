@@ -38,7 +38,7 @@ HYGIENE_CONTEXT = "hygiene / No machine-local paths"
 HYGIENE_WORKFLOW_REF = "Heretek-AI/.github/.github/workflows/hygiene.yml"
 # Report static names, never API-supplied identifiers. The audit reads secret
 # names/visibility/repository scope only; it never fetches or logs values.
-KNOWN_ORG_SECRETS = (
+EXPECTED_ORG_ENTRIES = (
     "ORG_SYNC_TOKEN",
     "LLM_API_KEY",
     "OCR_LLM_TOKEN",
@@ -797,7 +797,7 @@ def check_repo(
     return info
 
 
-def check_org_secrets(
+def check_org_entries(
     org: str,
     findings: dict[str, list[str]],
     managed: dict[str, dict[str, Any]],
@@ -828,37 +828,37 @@ def check_org_secrets(
         for entry in entries
         if isinstance(entry, dict) and isinstance(entry.get("name"), str)
     }
-    if any(name not in KNOWN_ORG_SECRETS for name in listed):
+    if any(entry_name not in EXPECTED_ORG_ENTRIES for entry_name in listed):
         findings["secret_hygiene"].append(
             "organization has untracked Actions secret(s); names withheld from this report"
         )
 
-    for name in KNOWN_ORG_SECRETS:
-        meta, status = gh_api_status(f"/orgs/{org}/actions/secrets/{name}")
+    for entry_name in EXPECTED_ORG_ENTRIES:
+        meta, status = gh_api_status(f"/orgs/{org}/actions/secrets/{entry_name}")
         if meta is None:
             if status == 404:
                 continue
             findings["unavailable"].append(
-                unavailable_message(f"org secret `{name}`", status)
+                unavailable_message(f"org secret `{entry_name}`", status)
             )
             continue
 
         visibility = meta.get("visibility")
 
-        if name == "OPENCODE_API_KEY":
+        if entry_name == "OPENCODE_API_KEY":
             findings["secret_hygiene"].append(
                 "org secret `OPENCODE_API_KEY` still exists (stale; remove it)"
             )
 
         if visibility == "all":
             findings["secret_hygiene"].append(
-                f"org secret `{name}` has visibility `all` "
+                f"org secret `{entry_name}` has visibility `all` "
                 "(expected selected repositories)"
             )
         elif visibility == "selected":
             repo_payload = gh_api_checked(
-                f"/orgs/{org}/actions/secrets/{name}/repositories?per_page=100",
-                f"repositories for org secret `{name}`",
+                f"/orgs/{org}/actions/secrets/{entry_name}/repositories?per_page=100",
+                f"repositories for org secret `{entry_name}`",
                 findings,
             )
             if repo_payload is None:
@@ -870,7 +870,7 @@ def check_org_secrets(
             )
             if not isinstance(repo_entries, list):
                 findings["unavailable"].append(
-                    f"repositories for org secret `{name}` returned an unexpected "
+                    f"repositories for org secret `{entry_name}` returned an unexpected "
                     "payload; posture unknown"
                 )
                 continue
@@ -890,12 +890,12 @@ def check_org_secrets(
 
             if out_of_scope:
                 findings["secret_hygiene"].append(
-                    f"org secret `{name}` is scoped to archived or untracked "
+                    f"org secret `{entry_name}` is scoped to archived or untracked "
                     "repositories (inspect in Org Settings)"
                 )
         else:
             findings["secret_hygiene"].append(
-                f"org secret `{name}` has an unexpected visibility "
+                f"org secret `{entry_name}` has an unexpected visibility "
                 "(expected `all` or `selected`)"
             )
 
@@ -1340,7 +1340,7 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
     check_code_security_config(org, findings, expected_public_repos)
 
     # 12. Organization secret scoping
-    check_org_secrets(org, findings, managed, forks, archived_names)
+    check_org_entries(org, findings, managed, forks, archived_names)
 
     # 13. Third-party GitHub App installations
     check_installations(org, findings)
