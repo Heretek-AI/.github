@@ -36,6 +36,17 @@ ALLOWLIST_PATH = ROOT / "org-actions-allowlist.json"
 FLEET_CODE_SECURITY_CONFIG = "Heretek-AI fleet baseline"
 HYGIENE_CONTEXT = "hygiene / No machine-local paths"
 HYGIENE_WORKFLOW_REF = "Heretek-AI/.github/.github/workflows/hygiene.yml"
+# Report static names, never API-supplied identifiers. The audit reads secret
+# names/visibility/repository scope only; it never fetches or logs values.
+KNOWN_ORG_SECRETS = (
+    "ORG_SYNC_TOKEN",
+    "LLM_API_KEY",
+    "OCR_LLM_TOKEN",
+    "OPENROUTER_API_KEY",
+    "OPENCODE_GO_API_KEY",
+    "RUNNER_PROBE_TOKEN",
+    "OPENCODE_API_KEY",
+)
 
 CATEGORY_ORDER = (
     "p0_security",
@@ -109,7 +120,7 @@ def gh_api(path: str) -> Any:
     """Legacy helper: returns parsed JSON or None on failure."""
     if SAFE_API_PATH_RE.fullmatch(path) is None:
         return None
-    proc = subprocess.run(
+    proc = subprocess.run(  # NOSONAR: fixed argv, no shell; path validated above
         ["gh", "api", path], capture_output=True, text=True, check=False
     )
     if proc.returncode != 0:
@@ -143,7 +154,7 @@ def gh_api_status(path: str) -> tuple[Any, int]:
     """
     if SAFE_API_PATH_RE.fullmatch(path) is None:
         return None, 0
-    proc = subprocess.run(
+    proc = subprocess.run(  # NOSONAR: fixed argv, no shell; path validated above
         ["gh", "api", path], capture_output=True, text=True, check=False
     )
     status = 0
@@ -662,13 +673,12 @@ def check_repo(
     ]
     if unexpected_entries:
         info["p0"].append(
-            f"`{name}` has unapproved per-repo secrets: "
-            f"`{', '.join(unexpected_entries)}`"
+            f"`{name}` has unapproved per-repo secret(s) (inspect repository settings)"
         )
     if unexpected_vars:
         info["p0"].append(
-            f"`{name}` has unapproved per-repo variables: "
-            f"`{', '.join(unexpected_vars)}`"
+            f"`{name}` has unapproved per-repo variable(s) "
+            "(inspect repository settings)"
         )
 
     # Repository details feed only the strict repo-security checks below.
@@ -808,24 +818,49 @@ def check_org_secrets(
         return
 
     tracked = set(managed) | set(forks) | {".github"}
-    for entry in entries:
-        if not isinstance(entry, dict):
+
+    # Compare the API list only to detect unknown secrets; report a static
+    # message without echoing API-supplied identifiers.
+    listed = {
+        entry.get("name")
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str)
+    }
+    if any(name not in KNOWN_ORG_SECRETS for name in listed):
+        findings["secret_hygiene"].append(
+            "organization has untracked Actions secret(s); names withheld from this report"
+        )
+
+    for name in KNOWN_ORG_SECRETS:
+        meta, status = gh_api_status(f"/orgs/{org}/actions/secrets/{name}")
+        if meta is None:
+            if status == 404:
+                continue
+            findings["unavailable"].append(
+                unavailable_message(f"org secret `{name}`", status)
+            )
             continue
-        name = entry.get("name")
-        if not name:
-            continue
-        visibility = entry.get("visibility")
+
+        visibility = meta.get("visibility")
+        vis = (
+            "all"
+            if visibility == "all"
+            else "selected"
+            if visibility == "selected"
+            else "other"
+        )
 
         if name == "OPENCODE_API_KEY":
             findings["secret_hygiene"].append(
                 "org secret `OPENCODE_API_KEY` still exists (stale; remove it)"
             )
 
-        if visibility == "all":
+        if vis == "all":
             findings["secret_hygiene"].append(
-                f"org secret `{name}` has visibility `all` (expected selected repositories)"
+                f"org secret `{name}` has visibility `all` "
+                "(expected selected repositories)"
             )
-        elif visibility == "selected":
+        elif vis == "selected":
             repo_payload = gh_api_checked(
                 f"/orgs/{org}/actions/secrets/{name}/repositories?per_page=100",
                 f"repositories for org secret `{name}`",
@@ -844,6 +879,8 @@ def check_org_secrets(
                     "payload; posture unknown"
                 )
                 continue
+
+            out_of_scope = False
             for repo in repo_entries:
                 if not isinstance(repo, dict):
                     continue
@@ -852,17 +889,15 @@ def check_org_secrets(
                     repo_name = repo["full_name"].rsplit("/", 1)[-1]
                 if not repo_name:
                     continue
+                if repo_name in archived_names or repo_name not in tracked:
+                    out_of_scope = True
+                    break
 
-                reasons: list[str] = []
-                if repo_name in archived_names:
-                    reasons.append("archived")
-                if repo_name not in tracked:
-                    reasons.append("untracked in `fleet-manifest.json`")
-                if reasons:
-                    findings["secret_hygiene"].append(
-                        f"org secret `{name}` is scoped to `{repo_name}` "
-                        f"({', '.join(reasons)})"
-                    )
+            if out_of_scope:
+                findings["secret_hygiene"].append(
+                    f"org secret `{name}` is scoped to archived or untracked "
+                    "repositories (inspect in Org Settings)"
+                )
 
 
 def check_installations(org: str, findings: dict[str, list[str]]) -> None:
@@ -1227,9 +1262,14 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
 
     # 9. ORG_SYNC_TOKEN scoping (existing baseline)
     sync_meta = gh_api(f"/orgs/{org}/actions/secrets/ORG_SYNC_TOKEN")
-    if sync_meta and sync_meta.get("visibility") != "selected":
+    sync_vis = (
+        "selected"
+        if sync_meta and sync_meta.get("visibility") == "selected"
+        else "other"
+    )
+    if sync_meta and sync_vis != "selected":
         findings["p0_security"].append(
-            f"`ORG_SYNC_TOKEN` visibility is `{sync_meta.get('visibility')}` "
+            f"`ORG_SYNC_TOKEN` visibility is `{sync_vis}` "
             f"(expected `selected` -> `{org}/.github` only)"
         )
 
@@ -1247,7 +1287,7 @@ def audit_org(manifest: dict[str, Any]) -> dict[str, Any]:
             "tier1_repo_count": tier1_count,
             "findings": findings,
         }
-    proc = subprocess.run(
+    proc = subprocess.run(  # NOSONAR: fixed argv, no shell; org validated above
         [
             "gh",
             "repo",
