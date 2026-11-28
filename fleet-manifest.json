@@ -60,6 +60,7 @@
       "profile": "node-zerodep",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": true,
       "license_default": "apache-2.0",
       "secret_exceptions": []
     },
@@ -69,6 +70,7 @@
       "profile": "node-zerodep",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": false,
       "license_default": "mit",
       "secret_exceptions": []
     },
@@ -78,6 +80,7 @@
       "profile": "godot-gdscript",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": true,
       "license_default": "apache-2.0",
       "secret_exceptions": []
     },
@@ -87,6 +90,7 @@
       "profile": "universal",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": true,
       "license_default": "mit",
       "secret_exceptions": [
         "APP_PRIVATE_KEY",
@@ -100,6 +104,7 @@
       "profile": "python-uv",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": false,
       "license_default": "apache-2.0",
       "secret_exceptions": []
     },
@@ -109,6 +114,7 @@
       "profile": "universal",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": false,
       "license_default": "mit",
       "secret_exceptions": [
         "PAT_STANDALONE",
@@ -121,6 +127,7 @@
       "profile": "cpp-cmake",
       "actions_enabled": true,
       "protected_ruleset": true,
+      "self_hosted_runner": true,
       "license_default": "apache-2.0",
       "secret_exceptions": []
     },
@@ -130,6 +137,7 @@
       "profile": "python-uv",
       "actions_enabled": true,
       "protected_ruleset": false,
+      "self_hosted_runner": false,
       "license_default": "apache-2.0",
       "secret_exceptions": []
     },
@@ -139,6 +147,7 @@
       "profile": "python-uv",
       "actions_enabled": true,
       "protected_ruleset": false,
+      "self_hosted_runner": false,
       "license_default": "mit",
       "secret_exceptions": []
     },
@@ -148,6 +157,7 @@
       "profile": "rust-cargo",
       "actions_enabled": true,
       "protected_ruleset": false,
+      "self_hosted_runner": false,
       "license_default": "apache-2.0",
       "secret_exceptions": []
     },
@@ -157,6 +167,7 @@
       "profile": "universal",
       "actions_enabled": true,
       "protected_ruleset": false,
+      "self_hosted_runner": false,
       "license_default": "mit",
       "secret_exceptions": []
     },
@@ -166,6 +177,7 @@
       "profile": "universal",
       "actions_enabled": true,
       "protected_ruleset": false,
+      "self_hosted_runner": false,
       "license_default": "mit",
       "secret_exceptions": []
     }

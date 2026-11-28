@@ -76,8 +76,10 @@ ls /dev/nvme* /dev/sd* 2>&1                        # Must not be accessible
    UV_CACHE_DIR=/var/cache/heretek-ci/uv
    BUN_INSTALL_CACHE_DIR=/var/cache/heretek-ci/bun
    ```
-3. **Create a minimal-scope `RUNNER_PROBE_TOKEN` org secret** (visibility: `all`) with **ONLY `Organization self-hosted runners: Read-only`** permission. Never reuse `ORG_SYNC_TOKEN`.
+3. **Create a minimal-scope `RUNNER_PROBE_TOKEN` org secret** (visibility: `selected` — active managed repositories plus `.github`) with **ONLY `Organization self-hosted runners: Read-only`** permission. Never reuse `ORG_SYNC_TOKEN`.
 4. **In GitHub Org Settings -> Actions -> General**, enable **"Require approval for all outside collaborators"** before enabling `allows_public_repositories` on the runner group.
+
+The Default runner group is scoped via `fleet-manifest.json` (`self_hosted_runner: true`) to `GDevelop-Unlocked`, `TAT-2`, `homebrew-tap`, and `game-engine`; the org self-hosted runner policy is `selected`. `resolve-runner.yml` remains the only supported entry point and still falls back to `ubuntu-latest` when the runner is offline.
 
 ## 4. Calling `resolve-runner.yml` from a Repository Workflow
 
@@ -94,6 +96,6 @@ jobs:
     needs: [resolve-runner]
     runs-on: ${{ fromJson(needs.resolve-runner.outputs.runs_on) }}
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: echo "Running on self_hosted=${{ needs.resolve-runner.outputs.is_self_hosted }}"
 ```

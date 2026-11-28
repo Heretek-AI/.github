@@ -27,7 +27,32 @@ pre-commit:
           jq -e 'type == "array" and all(.[]; (.name | type == "string") and (.color | test("^[0-9a-f]{6}$")) and (.description | type == "string"))' labels.json >/dev/null
         fi
         if [ -f fleet-manifest.json ]; then
-          jq -e '.schema_version == 1 and (.profiles | type == "object") and (.repositories | type == "array")' fleet-manifest.json >/dev/null
+          jq -e '
+            .schema_version == 2
+            and (.organization | type == "string")
+            and (.profiles | type == "object")
+            and (.repositories | type == "array")
+            and (.forks | type == "array")
+            and (.archive_candidates | type == "array")
+            and all(.repositories[];
+              (.name | type == "string")
+              and (.tier == 1 or .tier == 2)
+              and (.profile | type == "string")
+              and (.actions_enabled | type == "boolean")
+              and (.protected_ruleset | type == "boolean")
+              and (.self_hosted_runner | type == "boolean")
+              and ((.self_hosted_runner == false) or (.actions_enabled == true))
+            )
+          ' fleet-manifest.json >/dev/null
+        fi
+        if [ -f org-actions-allowlist.json ]; then
+          jq -e '
+            .schema_version == 1
+            and (.github_owned_allowed | type == "boolean")
+            and (.verified_allowed | type == "boolean")
+            and (.patterns_allowed | type == "array")
+            and all(.patterns_allowed[]; type == "string")
+          ' org-actions-allowlist.json >/dev/null
         fi
 
     - name: shell-format
